@@ -6,7 +6,7 @@ Four questions in five minutes. About 75 seconds per answer. Twelve+ prepared an
 
 ## 60-second elevator pitch (the opener for any "tell me about your project")
 
-Trade Mogging is a single-player iPad-browser game where a 9-year-old kid plays a capybara at a Middle-Eastern night bazaar. Customers ask for fractions of food, "three quarters of hummus," and the kid combines pieces from five vendor stalls to fulfill the order. The trick is that the cheapest combination almost always uses fraction equivalence: two quarters and one half cost different amounts, but they fulfill the same order. So the kid learns equivalence by playing, not by being told. Built scripted, no LLM in the demo, because Synthesis's own product avoids raw LLMs for children and I trust their thinking on that. Five days, five vendors, six customer rounds, on-demand hint. The lesson ends. The kid leaves the screen.
+Trade Mogging is a single-player iPad-browser game where a 9-year-old kid plays a capybara at a Middle-Eastern night bazaar. Customers ask for fractions of food, "three quarters of hummus," and the kid combines pieces from five vendor stalls to fulfill the order. The trick is that the cheapest combination almost always uses fraction equivalence: two quarters and one half cost different amounts, but they fulfill the same order. So the kid learns equivalence by playing, not by being told. The kid never sees raw LLM text; we follow Synthesis's principle on that. The Anthropic API is used in one narrow place: scoring the kid's typed explanation after a wrong serve on a 1-5 rubric, which selects one of five pre-authored scripted responses. The LLM's judgment, not its prose. Five days, five vendors, six customer rounds. The lesson ends. The kid leaves the screen.
 
 ---
 

@@ -1,22 +1,30 @@
-# Boxy
+# Trade Mogging
 
-A single-player iPad-browser block puzzle that teaches fraction equivalence to a third grader.
+A single-player iPad-browser game that teaches fraction equivalence to a 9-year-old.
 
-The Gauntlet G5 Week 4 hiring-partner submission for Superbuilders.
+Gauntlet G5 Week 4 hiring-partner submission for Superbuilders.
 
 ## What it is
 
-The kid drags fraction-rectangle pieces onto a board. Each colored edge on the board carries a fraction rule (e.g., `BLUE = 1/2`). When the kid's piece touches a colored edge, the cell count where they touch must satisfy the rule applied to the colored edge's cell count.
+You are a capybara hustler at a goofy Middle Eastern bazaar. Customers walk up and order exact fractional amounts of food (e.g., "7/12 of a baklava tray"). Five vendor animals — a flat-capped Camel, a be-sunglassed Goat, a fez-wearing Pigeon, a gold-chained Cat, and a boss Water Buffalo — sell fractional pieces at different prices. You drag pieces to your tray, combining them using fraction equivalence to hit the exact amount, cheapest. When you find the cheapest valid combination, you "MOG" the vendor: your capybara literally hops up and sits on the vendor's head (this is real capybara behavior, which makes it funny). Wrong amount = customer walks, deposit lost, mini lesson appears.
 
-Equivalence is the strategy: multiple pieces from the hand can satisfy the same rule, and combining smaller pieces also works (two 1-cell touches sum to 2 cells, the same as one 2-cell touch).
-
-The kid decides when to submit. Score is empty cells (lower better) plus a small bonus for using every piece in hand.
+The math IS the game. Every reward exists *because of* the math, not in spite of it.
 
 ## Why it teaches
 
-Built on Engelmann's Direct Instruction principle that every detail of instruction must be controlled to minimize misinterpretation, and Patrick Skinner's cognitive-load framework that competence is the only reward worth engineering for. Every animation clarifies. There is no decorative reward. The lesson ends. The kid leaves the screen.
+Built on two foundations:
 
-See [`docs/BOXY_SPEC.md`](docs/BOXY_SPEC.md) for the full game and architecture spec.
+1. **Patrick Skinner's cognitive-load framework** ([L = M × G(C) × T](https://patskinner.substack.com/p/the-ultimate-balance-cognitive-load)). Competence drives engagement, not the other way around. The cash stack growing is functional feedback, not a decorative reward. No XP, no streaks, no loot.
+
+2. **Engelmann's Direct Instruction**. The knowledge tree is atomized in [`docs/ATOMIZATION.md`](docs/ATOMIZATION.md) (atoms A1 through A11). Each customer in the curriculum maps to a specific atom or composition. Customers progress from "drag one piece" (no equivalence) to "boss order 7/12" (equivalence mechanically required).
+
+## How the AI tutor works (and doesn't)
+
+When the kid serves the wrong amount, a mini lesson appears with side-by-side wedges (served vs. wanted) and one worked example of a cheapest combination. The kid types one sentence in their own words explaining what went wrong.
+
+That text is sent to a Vercel serverless function (`api/validate.ts`) which calls the Anthropic API to score the explanation on a 1-5 rubric. The kid never sees the LLM's raw response. The frontend maps the integer score to one of 5 pre-written scripted responses. This satisfies the Synthesis brief's rule that LLM text is never exposed to the kid — we use the LLM's pedagogical judgment, not its prose.
+
+If the API call fails (missing key, offline, rate limit), the client falls back to keyword-based scoring so the lesson still functions.
 
 ## Run locally
 
@@ -25,7 +33,9 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 (or the URL Vite prints). Tested in Safari on iPad.
+Open the URL Vite prints. Tested in Safari on iPad.
+
+For the AI validation to work locally, copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY`. Without the key, the local-keyword fallback runs.
 
 ## Build for production
 
@@ -34,15 +44,24 @@ npm run build
 npm run preview
 ```
 
+## Deploy
+
+Vercel auto-deploys on push to `main`. The serverless function lives in `api/validate.ts` and needs `ANTHROPIC_API_KEY` set in Vercel's project environment variables.
+
 ## Stack
 
-- Vite + React 19 + TypeScript
-- Tailwind CSS 3
-- `@dnd-kit/core` for touch-first drag-and-drop
-- XState 5 for game state
-- Framer Motion 11 for animation
-- Tone.js 14 for audio
-- Vercel for deployment
+Vite, React 19, TypeScript. Tailwind CSS for styling. `@dnd-kit/core` for touch-first drag-and-drop. XState 5 for game state (single source of truth, UI is a pure render of context). Framer Motion for the MOG animation and outcome splashes. Tone.js for functional audio (cha-ching, sad trombone, mog sting). Vercel for hosting and serverless validation.
+
+## Docs
+
+- [`docs/ATOMIZATION.md`](docs/ATOMIZATION.md) — knowledge tree from "what is a whole" through "1/2 = 2/4"
+- [`docs/BOXY_SPEC.md`](docs/BOXY_SPEC.md) — original game spec (pre-pivot, kept for context)
+- [`docs/research/RESEARCH_NOTES.md`](docs/research/RESEARCH_NOTES.md) — Skinner, Synthesis, Direct Instruction synthesis
+- [`docs/MANUAL_TESTS.md`](docs/MANUAL_TESTS.md) — playable test scenarios for the manipulative
+- [`docs/IPAD_ROADMAP.md`](docs/IPAD_ROADMAP.md) — what would change to ship as a native iPad app
+- [`docs/DEFENSE_BREAKOUT_SCRIPT.md`](docs/DEFENSE_BREAKOUT_SCRIPT.md) — 5-minute cohort defense
+- [`docs/AI_INTERVIEW_PREP.md`](docs/AI_INTERVIEW_PREP.md) — anticipatory answers for the AI video interview
+- [`website/index.html`](website/index.html) — single-page architecture website
 
 ## Repo conventions
 
@@ -50,4 +69,4 @@ Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`). Separate commi
 
 ## Live demo
 
-(URL goes here after Vercel connects.)
+URL goes here after Vercel connects.
