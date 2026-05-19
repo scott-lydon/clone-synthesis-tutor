@@ -86,9 +86,9 @@ export const cheapestCombination = (customer: Customer): { pieces: VendorPiece[]
     if (best !== null && node.cost >= best.cost) return; // prune
     for (let i = startIdx; i < sortedCatalog.length; i++) {
       const piece = sortedCatalog[i];
-      // Only try this piece if it fits in remaining.
-      if (lessThan(node.remaining, piece.size) && !equalFractions(node.remaining, piece.size)) continue;
-      const nextRemaining = addFractions(node.remaining, { num: -piece.size.num, den: piece.size.den });
+      // Skip piece if it's strictly bigger than what's left. (Equal is fine — it finishes the order.)
+      if (lessThan(node.remaining, piece.size)) continue;
+      const nextRemaining = addFractions(node.remaining, makeFraction(-piece.size.num, piece.size.den));
       search(
         {
           remaining: nextRemaining,

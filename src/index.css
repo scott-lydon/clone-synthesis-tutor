@@ -1,10 +1,11 @@
+/* Bebas Neue for the bazaar sign / headline display. Must precede @tailwind per CSS spec
+   (which is what PostCSS warns about). Browser renders with system fallback first and reflows
+   when the font lands. No FOIT. */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Bebas Neue for the bazaar sign / headline display. Loaded once at the bottom of file so the
-   game can render with a system fallback first and reflow when the font lands. No FOIT. */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
 
 :root {
   color-scheme: dark;
