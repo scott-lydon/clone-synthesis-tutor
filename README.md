@@ -22,9 +22,9 @@ Built on two foundations:
 
 When the kid serves the wrong amount, a mini lesson appears with side-by-side wedges (served vs. wanted) and one worked example of a cheapest combination. The kid types one sentence in their own words explaining what went wrong.
 
-That text is sent to a Vercel serverless function (`api/validate.ts`) which calls the Anthropic API to score the explanation on a 1-5 rubric. The kid never sees the LLM's raw response. The frontend maps the integer score to one of 5 pre-written scripted responses. This satisfies the Synthesis brief's rule that LLM text is never exposed to the kid — we use the LLM's pedagogical judgment, not its prose.
+That text is sent to a `/api/validate` endpoint which calls the Anthropic API to score the explanation on a 1-5 rubric. The kid never sees the LLM's raw response. The frontend maps the integer score to one of 5 pre-written scripted responses. This satisfies the Synthesis brief's rule that LLM text is never exposed to the kid — we use the LLM's pedagogical judgment, not its prose.
 
-If the API call fails (missing key, offline, rate limit), the client falls back to keyword-based scoring so the lesson still functions.
+If the API call fails (missing key, offline, rate limit, or running as a static-only deploy), the client falls back to keyword-based scoring so the lesson still functions. The Friday demo runs static-only on Render; the LLM scoring upgrade is on the v1.1 roadmap.
 
 ## Run locally
 
@@ -46,11 +46,13 @@ npm run preview
 
 ## Deploy
 
-Vercel auto-deploys on push to `main`. The serverless function lives in `api/validate.ts` and needs `ANTHROPIC_API_KEY` set in Vercel's project environment variables.
+[Render](https://render.com) Static Site auto-deploys on push to `main`. Config is in [`render.yaml`](render.yaml) at the repo root, so Render reads it as a Blueprint on first connect; the SPA rewrite (`/* → /index.html`) is included so refreshing mid-game does not 404.
+
+The deploy is **static-only** for the Friday demo. The wrong-serve lesson uses the client-side keyword scoring fallback; the kid still gets a calibrated 1-5 response to their typed explanation. To enable LLM-scored explanations later, add a Render Web Service alongside (or move to a host with serverless functions) and point `/api/validate` at it.
 
 ## Stack
 
-Vite, React 19, TypeScript. Tailwind CSS for styling. `@dnd-kit/core` for touch-first drag-and-drop. XState 5 for game state (single source of truth, UI is a pure render of context). Framer Motion for the MOG animation and outcome splashes. Tone.js for functional audio (cha-ching, sad trombone, mog sting). Vercel for hosting and serverless validation.
+Vite, React 19, TypeScript. Tailwind CSS for styling. `@dnd-kit/core` for touch-first drag-and-drop. XState 5 for game state (single source of truth, UI is a pure render of context). Framer Motion for the MOG animation and outcome splashes. Tone.js for functional audio (cha-ching, sad trombone, mog sting). Render Static Site for hosting.
 
 ## Docs
 
@@ -69,4 +71,4 @@ Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`). Separate commi
 
 ## Live demo
 
-URL goes here after Vercel connects.
+URL goes here after Render connects.

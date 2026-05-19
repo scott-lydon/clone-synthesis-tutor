@@ -1,0 +1,25 @@
+# Render Blueprint — Trade Mogging static-site deploy.
+#
+# Why static-only: the wrong-serve lesson panel posts the kid's typed explanation
+# to /api/validate, and the client already falls back to keyword-based scoring
+# when that endpoint is unreachable (see src/components/LessonPanel.tsx and
+# api/validate.ts handler). For the Friday demo, keyword scoring is plenty;
+# the LLM upgrade can ship later as a separate Render Web Service if desired.
+#
+# Routes block: SPA rewrite. Any non-asset path falls back to index.html so
+# refreshing the page mid-game does not 404.
+services:
+  - type: web
+    name: trade-mogging
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    pullRequestPreviewsEnabled: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
