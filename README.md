@@ -24,7 +24,7 @@ When the kid serves the wrong amount, a mini lesson appears with side-by-side we
 
 That text is sent to a `/api/validate` endpoint which calls the Anthropic API to score the explanation on a 1-5 rubric. The kid never sees the LLM's raw response. The frontend maps the integer score to one of 5 pre-written scripted responses. This satisfies the Synthesis brief's rule that LLM text is never exposed to the kid — we use the LLM's pedagogical judgment, not its prose.
 
-If the API call fails (missing key, offline, rate limit, or running as a static-only deploy), the client falls back to keyword-based scoring so the lesson still functions. The Friday demo runs static-only on Render; the LLM scoring upgrade is on the v1.1 roadmap.
+If the API call fails (missing key, offline, rate limit), the client falls back to keyword-based scoring so the lesson still functions.
 
 ## Run locally
 
@@ -46,13 +46,13 @@ npm run preview
 
 ## Deploy
 
-[Render](https://render.com) Static Site auto-deploys on push to `main`. Config is in [`render.yaml`](render.yaml) at the repo root, so Render reads it as a Blueprint on first connect; the SPA rewrite (`/* → /index.html`) is included so refreshing mid-game does not 404.
+[Render](https://render.com) Node Web Service auto-deploys on push to `main`. Config is in [`render.yaml`](render.yaml) at the repo root (Render reads it as a Blueprint on first connect). The Express server in [`server/index.mjs`](server/index.mjs) serves the Vite-built SPA from `dist/` AND owns `/api/validate`, so the entire app is a single service on one URL — no two-service split, no CORS gymnastics.
 
-The deploy is **static-only** for the Friday demo. The wrong-serve lesson uses the client-side keyword scoring fallback; the kid still gets a calibrated 1-5 response to their typed explanation. To enable LLM-scored explanations later, add a Render Web Service alongside (or move to a host with serverless functions) and point `/api/validate` at it.
+Set `ANTHROPIC_API_KEY` in Render dashboard → your service → Environment. The blueprint marks it `sync: false` so the value never lives in the repo. Pro plan recommended so the service does not sleep (free tier has a 30-second cold start after 15 minutes of idle, which is bad for live demos).
 
 ## Stack
 
-Vite, React 19, TypeScript. Tailwind CSS for styling. `@dnd-kit/core` for touch-first drag-and-drop. XState 5 for game state (single source of truth, UI is a pure render of context). Framer Motion for the MOG animation and outcome splashes. Tone.js for functional audio (cha-ching, sad trombone, mog sting). Render Static Site for hosting.
+Vite, React 19, TypeScript. Tailwind CSS for styling. `@dnd-kit/core` for touch-first drag-and-drop. XState 5 for game state (single source of truth, UI is a pure render of context). Framer Motion for the MOG animation and outcome splashes. Tone.js for functional audio (cha-ching, sad trombone, mog sting). Express on Node 20 for the server (`server/index.mjs`), Render Web Service for hosting, Anthropic Claude Haiku 4.5 for silent rubric scoring on the lesson panel.
 
 ## Docs
 

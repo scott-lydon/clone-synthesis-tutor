@@ -1,25 +1,29 @@
-# Render Blueprint — Trade Mogging static-site deploy.
+# Render Blueprint — Trade Mogging Node Web Service.
 #
-# Why static-only: the wrong-serve lesson panel posts the kid's typed explanation
-# to /api/validate, and the client already falls back to keyword-based scoring
-# when that endpoint is unreachable (see src/components/LessonPanel.tsx and
-# api/validate.ts handler). For the Friday demo, keyword scoring is plenty;
-# the LLM upgrade can ship later as a separate Render Web Service if desired.
+# Why Node Web Service (not Static Site): the wrong-serve lesson POSTs the kid's typed
+# explanation to /api/validate, which calls the Anthropic API to score it on a 1-5 rubric.
+# A static site cannot run server code, so the API key would leak if the call were made
+# from the browser. Node Web Service keeps the key in process.env on the server only.
 #
-# Routes block: SPA rewrite. Any non-asset path falls back to index.html so
-# refreshing the page mid-game does not 404.
+# The Express server (server/index.mjs) serves the Vite-built SPA from /dist AND owns
+# /api/validate, so this is a single-service deployment with one URL.
+#
+# Set ANTHROPIC_API_KEY in Render dashboard → Environment (sync: false prevents the value
+# from ever appearing in the blueprint file in git).
+#
+# Pro plan recommended so the service does not sleep — cold starts on free tier add 30s
+# to first-after-idle requests, which is bad for a live demo.
 services:
   - type: web
     name: trade-mogging
-    runtime: static
+    runtime: node
+    plan: starter # Bump to "standard" or "pro" in dashboard for always-on / more resources.
     buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
+    startCommand: npm start
+    healthCheckPath: /healthz
     pullRequestPreviewsEnabled: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /assets/*
-        name: Cache-Control
-        value: public, max-age=31536000, immutable
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false # Required — paste value in Render dashboard, never commit it.
+      - key: NODE_VERSION
+        value: "20"
