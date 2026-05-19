@@ -52,9 +52,15 @@ Manual tests live in `docs/MANUAL_TESTS.md`, organized by customer round, outcom
 
 Customer 3 wants three quarters of hummus. The Goat sells halves at $4.50, quarters at $2.25, and eighths at $1.50. The kid has three correct paths: one half plus one quarter ($6.75), three quarters ($6.75 also), or six eighths ($9.00). The first two tie for cheapest. The third overpays by $2.25 because the kid hasn't internalized that `6/8` and `3/4` are the same amount. Our MOG detection rewards both cheapest paths equally; the wrong-but-correct-amount path returns a "cheaper combo for $6.75" hint without naming `3/4 = 6/8` directly. We let the kid notice it.
 
-### "Why no LLM?"
+### "Why no LLM tutor dialogue, and where do you use an LLM?"
 
-Patrick Skinner, who is the technical contact on the brief, published a piece in November 2025 specifically arguing against LLM-as-tutor-for-children. He cites the engagement-over-comprehension failure mode of Knewton, AltSchool, and Byju's. His employer's product, Synthesis Tutor, explicitly states in its FAQ that it does not outsource children's education to an LLM. Seven failure modes apply to a LLM tutor for a third grader: inappropriate content, validating wrong answers because the model is wired for warmth, math errors on fractions (models hallucinate fraction arithmetic), topic drift, latency on the demo URL, cost handling for a public iPad app, and voice mismatch with the Synthesis brand. The scripted version has none of those.
+The kid never sees raw LLM text in this product. Patrick Skinner's November 2025 piece argues against LLM-as-tutor-for-children and cites Knewton, AltSchool, and Byju's as cautionary tales. Synthesis's own FAQ says explicitly that they "do not simply outsource your child's education to an LLM." Seven failure modes apply to a model speaking directly to a third grader: inappropriate content, validating wrong answers, math errors on fractions, topic drift, latency, cost handling, voice mismatch.
+
+We do use Anthropic's API in one narrow place: after the kid serves a wrong amount, the lesson panel asks them to type one sentence in their own words explaining what happened. That text is sent to a Vercel serverless function (`api/validate.ts`) which calls the Anthropic API to score the explanation on a 1-5 rubric. The integer score then selects one of five pre-authored scripted responses; the kid never sees the LLM's prose. If the API call fails, the client falls back to keyword-based scoring so the lesson still functions offline. The LLM's pedagogical judgment is used. Its writing is not.
+
+### "Walk me through a wrong-serve scenario end-to-end."
+
+The kid drags `1/2` plus `1/8` of hummus into the tray when the customer wants `3/4`. Tray sum is `5/8`. They tap Serve. The machine transitions to resolving, runs evaluateTrade, sees the sum is not equal to `3/4`, returns `{ kind: 'wrong-amount' }`. The machine transitions to the lesson state. The LessonPanel renders side-by-side wedges (served vs wanted) and one worked cheapest combination ("`1/2 + 1/4 = 3/4` for $6.75"). The kid types: "i forgot to add one more eighth because 5/8 is less than 6/8 which is the same as 3/4." We hit `/api/validate`, the serverless function asks Claude to rate the explanation 1-5 against the rubric, gets a 5 back, returns it. The frontend maps 5 to the scripted "Exactly right. You said the key idea. Onward." response. The kid taps Retry to clear the tray and try the same customer again, or Advance to move on losing the deposit.
 
 ### "What if the kid loses six in a row?"
 
@@ -139,3 +145,4 @@ The cheapest-combo solver was a deliberate engineering choice. BFS over piece co
 - "Eventually we want to..." Anchors the conversation in vapor. Use "v1.1 is in the iPad roadmap doc, here's the entry."
 - "Trust me." Cite the doc, the commit, the rubric line.
 - "Synthesis does it this way, so we do too." Cite the principle Synthesis is following, then apply it independently.
+- "We don't use any LLM." We do use one, for scoring the kid's typed explanation 1-5. Be honest, then name the principle (kid never sees raw model text) and how we implement it (score → one of five pre-authored responses, fallback to keyword scoring on API failure).
