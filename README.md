@@ -71,4 +71,4 @@ Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`). Separate commi
 
 ## Live demo
 
-URL goes here after Render connects.
+[trade-mogging.onrender.com](https://trade-mogging.onrender.com) — Render Starter web service, Node 20, auto-redeploys whenever the `main` branch is manually synced (public-URL Blueprint, so no GitHub webhook). The Express server in `server/index.mjs` serves the Vite SPA from `dist/` and owns `/api/validate`.
