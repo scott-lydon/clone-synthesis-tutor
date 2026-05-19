@@ -139,8 +139,8 @@ flowchart TD
     Frac["game/fraction.ts<br/>exact rational math"]
     Curr["game/curriculum.ts<br/>vendors + customers"]
   end
-  subgraph Edge["Vercel Edge"]
-    API["api/validate.ts<br/>(scores 1-5)"]
+  subgraph Edge["Render Node Web Service"]
+    API["server/index.mjs<br/>POST /api/validate (scores 1-5)"]
     Claude["Claude Haiku 4.5"]
   end
   UI --> DnD
@@ -160,7 +160,7 @@ flowchart TD
   class UI,DnD,Sound,Art browser
 </pre>
   </div>
-  <p class="mt-4 text-sm" style="color: var(--text-muted)">The kid sees only the browser column. Pure-logic modules have no IO, which makes them unit-testable and replay-debuggable. The Vercel edge call is the only network round-trip, and the kid never sees its prose.</p>
+  <p class="mt-4 text-sm" style="color: var(--text-muted)">The kid sees only the browser column. Pure-logic modules have no IO, which makes them unit-testable and replay-debuggable. The Render Node service call is the only network round-trip, and the kid never sees its prose.</p>
 </section>
 
 <!-- Components -->
@@ -196,8 +196,8 @@ flowchart TD
     </div>
 
     <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">Vercel Edge + Claude Haiku</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">/api/validate scores explanation 1-5, frontend maps to scripted line.</p>
+      <h3 class="display-font text-xl accent mb-1">Render Node + Claude Haiku</h3>
+      <p class="text-sm mb-3" style="color: var(--text-muted)">Express /api/validate scores explanation 1-5, frontend maps to scripted line.</p>
       <div class="grid grid-cols-2 gap-3 text-sm">
         <div class="pros">Pros<br/><span style="color: var(--text-muted)">real AI judgment, zero LLM text to kid, &lt;$0.0003/session</span></div>
         <div class="cons">Cons<br/><span style="color: var(--text-muted)">requires env var; offline falls back to keyword scorer</span></div>
@@ -263,7 +263,7 @@ sequenceDiagram
 flowchart LR
   Kid["Kid types<br/>'i forgot 6/8 = 3/4'"]
   Client[Frontend]
-  API["/api/validate<br/>Vercel Edge"]
+  API["/api/validate<br/>Render Node service"]
   Claude["Claude Haiku 4.5<br/>1-5 rubric prompt"]
   Map[Score → scripted line]
   Out["Kid reads:<br/>'Exactly right.'"]
@@ -428,7 +428,7 @@ flowchart LR
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">@dnd-kit</div><div class="text-xs" style="color: var(--text-muted)">touch drag</div></div>
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Framer Motion</div><div class="text-xs" style="color: var(--text-muted)">animation</div></div>
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Tone.js</div><div class="text-xs" style="color: var(--text-muted)">audio</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Vercel</div><div class="text-xs" style="color: var(--text-muted)">deploy + edge fn</div></div>
+    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Render</div><div class="text-xs" style="color: var(--text-muted)">Node web service</div></div>
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Claude Haiku</div><div class="text-xs" style="color: var(--text-muted)">rubric scorer</div></div>
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">SVG</div><div class="text-xs" style="color: var(--text-muted)">vendor art</div></div>
     <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">iPad Safari</div><div class="text-xs" style="color: var(--text-muted)">target</div></div>
@@ -448,7 +448,7 @@ flowchart LR
   new Chart(costCtx, {
     type: 'bar',
     data: {
-      labels: ['/api/validate (Haiku)', 'Vercel Edge', 'Static hosting', 'SVG art', 'Audio'],
+      labels: ['/api/validate (Haiku)', 'Render Node service', 'Static hosting', 'SVG art', 'Audio'],
       datasets: [{
         label: 'Cents per session',
         data: [0.03, 0.005, 0.001, 0, 0],

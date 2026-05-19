@@ -34,7 +34,7 @@ State management is XState v5, one machine, eight states (intro, shopping, resol
 
 ### Scalability (Pillar 2)
 
-The bottleneck is the cheapest-combo solver, which runs at every submit. It is bounded BFS with pruning over the per-food piece catalog. The catalog tops at five piece types per food and targets cap at one whole, so the search space is under a hundred nodes. I measured it: under 0.2ms on iPad Air 5th gen. If we scaled to dozens of vendor piece types we would switch to DP on the LCM-scaled integer weight, which is what the brute force is morally doing anyway. The frontend bundle is around 670kB minified, 200kB gzipped. First contentful paint on iPad Wi-Fi tested under 1.5 seconds. No backend, no auth, no database, so horizontal scalability is whatever Vercel's edge network supports.
+The bottleneck is the cheapest-combo solver, which runs at every submit. It's bounded BFS with pruning over the per-food piece catalog. The catalog tops at five piece types per food and targets cap at one whole, so the search space is under a hundred nodes. I measured it: under 0.2ms on iPad Air 5th gen. The frontend bundle is around 670kB minified, 200kB gzipped. First contentful paint on iPad Wi-Fi tested under 1.5 seconds. The Render Node service has one stateful piece, a rate-limit Map in process memory at 60 calls per IP per minute. Fine for a classroom. If we ever ran multi-instance I'd swap it for Upstash Redis so the limit survives blue/green deploys.
 
 ### Security (Pillar 3)
 
@@ -56,11 +56,11 @@ Customer 3 wants three quarters of hummus. The Goat sells halves at $4.50, quart
 
 The kid never sees raw LLM text in this product. Patrick Skinner's November 2025 piece argues against LLM-as-tutor-for-children and cites Knewton, AltSchool, and Byju's as cautionary tales. Synthesis's own FAQ says explicitly that they "do not simply outsource your child's education to an LLM." Seven failure modes apply to a model speaking directly to a third grader: inappropriate content, validating wrong answers, math errors on fractions, topic drift, latency, cost handling, voice mismatch.
 
-We do use Anthropic's API in one narrow place: after the kid serves a wrong amount, the lesson panel asks them to type one sentence in their own words explaining what happened. That text is sent to a Vercel serverless function (`api/validate.ts`) which calls the Anthropic API to score the explanation on a 1-5 rubric. The integer score then selects one of five pre-authored scripted responses; the kid never sees the LLM's prose. If the API call fails, the client falls back to keyword-based scoring so the lesson still functions offline. The LLM's pedagogical judgment is used. Its writing is not.
+We do use Anthropic's API in one narrow place: after the kid serves a wrong amount, the lesson panel asks them to type one sentence in their own words explaining what happened. That text is POSTed to `/api/validate` on our Render Node service (`server/index.mjs`) which calls Claude Haiku to score the explanation on a 1-5 rubric. The integer score then selects one of five pre-authored scripted responses; the kid never sees the LLM's prose. If the API call fails, the client falls back to keyword-based scoring so the lesson still functions offline. The LLM's pedagogical judgment is used. Its writing is not.
 
 ### "Walk me through a wrong-serve scenario end-to-end."
 
-The kid drags `1/2` plus `1/8` of hummus into the tray when the customer wants `3/4`. Tray sum is `5/8`. They tap Serve. The machine transitions to resolving, runs evaluateTrade, sees the sum is not equal to `3/4`, returns `{ kind: 'wrong-amount' }`. The machine transitions to the lesson state. The LessonPanel renders side-by-side wedges (served vs wanted) and one worked cheapest combination ("`1/2 + 1/4 = 3/4` for $6.75"). The kid types: "i forgot to add one more eighth because 5/8 is less than 6/8 which is the same as 3/4." We hit `/api/validate`, the serverless function asks Claude to rate the explanation 1-5 against the rubric, gets a 5 back, returns it. The frontend maps 5 to the scripted "Exactly right. You said the key idea. Onward." response. The kid taps Retry to clear the tray and try the same customer again, or Advance to move on losing the deposit.
+The kid drags `1/2` plus `1/8` of hummus into the tray when the customer wants `3/4`. Tray sum is `5/8`. They tap Serve. The machine transitions to resolving, runs evaluateTrade, sees the sum is not equal to `3/4`, returns `{ kind: 'wrong-amount' }`. The machine transitions to the lesson state. The LessonPanel renders side-by-side wedges (served vs wanted) and one worked cheapest combination ("`1/2 + 1/4 = 3/4` for $6.75"). The kid types: "i forgot to add one more eighth because 5/8 is less than 6/8 which is the same as 3/4." We POST to `/api/validate` on the Render Node service, which asks Claude Haiku to rate the explanation 1-5 against the rubric, gets a 5 back, returns it. The frontend maps 5 to the scripted "Exactly right. You said the key idea. Onward." response. The kid taps Retry to clear the tray and try the same customer again, or Advance to move on losing the deposit.
 
 ### "What if the kid loses six in a row?"
 
@@ -80,7 +80,7 @@ XState was a force-multiplier. The screen-state-to-event matrix is the kind of t
 
 ### Cost
 
-The app is a static SPA on Vercel's free tier. There is no per-request server cost, no LLM inference cost, no database. Cost to operate is zero dollars in the steady state. Cost to build was five days of focused engineering. If we added the v1.1 features (procedural pieces, save-and-resume), procedural is zero ongoing cost; save-and-resume would require either localStorage (zero cost) or a backend (call it $5 a month on Vercel's hobby tier).
+The hosting cost is $7 a month on Render's Starter plan, single Node Web Service. The LLM cost is Claude Haiku at about $0.0003 per failed-trade lesson, capped at 60 calls per IP per minute. A classroom of 30 kids playing once a day each, generating roughly one failed-trade lesson per kid per session, costs about $0.30 a month in LLM spend. So full operating cost at one classroom is about $7.30 a month. At 100 classrooms it's $37. The model scales linearly because Haiku is the dominant variable cost. Cost to build was five days of focused engineering.
 
 ### Team workflow
 
@@ -92,7 +92,7 @@ The architecture decisions were mine. The cheapest-combo solver was mine, includ
 
 ### Deployment
 
-GitHub at `github.com/scott-lydon/clone-synthesis-tutor`. Vercel is connected via GitHub integration so every push to main auto-deploys. `vercel.json` pins the framework as Vite and includes an SPA rewrite to `/index.html`. Build is `npm run build`, output is `dist/`. Production deploy is whatever Vercel's edge network gives me.
+GitHub at `github.com/scott-lydon/clone-synthesis-tutor`. Render connects via a public-URL Blueprint that reads `render.yaml` on the main branch. The Blueprint defines one Node Web Service: build is `npm install && npm run build`, start is `npm start` which boots `server/index.mjs`, health check hits `/healthz`. ANTHROPIC_API_KEY is marked `sync: false` in the blueprint so the value lives only in Render's env, never in the repo. Each release is a manual sync from the Render dashboard, one click; if I wanted webhook auto-deploy I'd switch to GitHub-integration mode and grant Render access to the scott-lydon org.
 
 ### Observability
 
@@ -116,7 +116,7 @@ Every draggable piece has an `aria-label` describing the fraction, food, and pri
 
 ### Demo-vs-production gap
 
-The demo and production are the same build. Vercel serves the same `dist/` that Vite produces locally. No demo-only env flags, no hardcoded sample data, no "imagine if" hand-waves. If the live URL works on iPad, the production app works.
+The demo and production are the same build. Render serves the same `dist/` that Vite produces locally, behind the same Express server I run on my laptop. No demo-only env flags, no hardcoded sample data, no "imagine if" hand-waves. If the live URL works on iPad, the production app works.
 
 ---
 

@@ -59,4 +59,4 @@ How Trade Mogging runs on an iPad in Safari, what changes from a desktop browser
 1. From the laptop, `cd /Users/scottlydon/Desktop/Clutter/iOS/clone-synthesis-tutor && npm run dev -- --host`. Vite prints a network URL on your LAN.
 2. On the iPad, in Safari, navigate to that network URL.
 3. Verify the manual test cases in `docs/MANUAL_TESTS.md`.
-4. Once Vercel is connected, every push deploys; the iPad can hit the live URL directly without LAN setup.
+4. Once Render is connected, the live URL works directly from the iPad without LAN setup. Public-URL Blueprint requires a manual sync (one click in Render dashboard) per `git push`; GitHub-integration mode would auto-deploy if you grant Render access to scott-lydon repos.

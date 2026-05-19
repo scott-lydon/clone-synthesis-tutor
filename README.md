@@ -71,4 +71,4 @@ Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`). Separate commi
 
 ## Live demo
 
-[trade-mogging.onrender.com](https://trade-mogging.onrender.com) — Render Starter web service, Node 20, auto-redeploys whenever the `main` branch is manually synced (public-URL Blueprint, so no GitHub webhook). The Express server in `server/index.mjs` serves the Vite SPA from `dist/` and owns `/api/validate`.
+[trade-mogging-v7ua.onrender.com](https://trade-mogging-v7ua.onrender.com) — Render Starter Node web service, Node 20, deploys from the `main` branch via a public-URL Blueprint (manual sync, no GitHub webhook). The Express server in `server/index.mjs` serves the Vite SPA from `dist/` and owns `/api/validate`. Smoke-tested end-to-end: `/healthz` confirms `anthropicKey: true`, `/api/validate` scores strong explanations 5 and gibberish 1.

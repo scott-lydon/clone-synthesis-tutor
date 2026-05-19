@@ -106,7 +106,7 @@ The brief explicitly permits scripted dialogue. More importantly, Synthesis's ow
 | Animal art | Hand-drawn SVG | Stock illustrations | Tight visual identity, no licensing, every animal communicates a "vibe" (camel's flat cap, goat's sunglasses, buffalo's nose ring). |
 | Validation | Pure function `evaluateTrade` | Methods on a Game class | Testable in isolation, no hidden state, machine is the only mutator. |
 | Cheapest-combo solver | Bounded BFS with pruning | Dynamic programming | Catalog tops at 5 piece types per food; DP would be over-tooling. |
-| Deploy | Vercel via GitHub integration | Vercel CLI, Netlify | Push-to-deploy beats CLI auth dance. `vercel.json` pins the framework. |
+| Deploy | Render Node Web Service (public-URL Blueprint) | Vercel, Netlify, Cloudflare Pages | Render Pro avoids cold-start; single service hosts SPA + `/api/validate`; public-URL Blueprint sidesteps the GitHub-integration cost of expanding org access. |
 
 ## Trade-offs
 
@@ -126,4 +126,6 @@ The brief explicitly permits scripted dialogue. More importantly, Synthesis's ow
 - @dnd-kit/core (touch-friendly drag-and-drop)
 - Tone.js 14 (Tone.PolySynth / MembraneSynth / MonoSynth)
 - Framer Motion 11 (reserved for v1.1 polish)
-- Vercel (push-to-deploy from GitHub)
+- Express on Node 20 (`server/index.mjs`) — serves the SPA from `dist/` and owns `POST /api/validate`
+- Render Node Web Service (manual sync from public-URL Blueprint)
+- Anthropic Claude Haiku 4.5 (silent rubric scorer)
