@@ -10,6 +10,12 @@
   mermaid.initialize({
     startOnLoad: true,
     theme: 'dark',
+    // securityLevel: 'loose' allows <img> tags in node labels so each
+    // service / library gets its Simple Icons CDN logo next to the text.
+    // Without this, Mermaid would HTML-escape the tags and the icons
+    // would appear as raw markup. Required by the project's "logos in
+    // diagrams" convention.
+    securityLevel: 'loose',
     themeVariables: {
       darkMode: true,
       primaryColor: '#1f2f55',
@@ -20,7 +26,8 @@
       tertiaryColor: '#152340',
       background: '#010d29',
       fontFamily: 'ui-sans-serif, system-ui, sans-serif'
-    }
+    },
+    flowchart: { htmlLabels: true }
   });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -176,34 +183,29 @@
 
 <section id="topology" class="max-w-6xl mx-auto px-6 py-10">
   <h2 class="text-3xl font-bold tracking-tight mb-2">One-look topology</h2>
-  <p class="mb-6" style="color: var(--muted);">Browser-side routing fans out to four route components. Three of them stay client-only; Trade Mogging calls the Node server once per missed serve, which forwards a scoring request to Anthropic Claude Haiku.</p>
-  <div class="panel p-3">
+  <p class="mb-6" style="color: var(--muted);">Split into two diagrams so no edges cross. Diagram A is the browser-side fan-out (router to routes to pure logic). Diagram B is the server hop that only Trade Mogging takes when a serve misses.</p>
+
+  <div class="panel p-3 mb-4">
+    <div class="text-xs uppercase tracking-[0.18em] mb-3 px-3 pt-2" style="color: var(--muted);">A · Browser-side routing</div>
     <div class="mermaid">
-flowchart TD
-  subgraph Browser["Browser (iPad Safari)"]
-    Router["BrowserRouter"]
+flowchart LR
+  Router["<img src='https://cdn.simpleicons.org/reactrouter/ca4245' width='18'/> BrowserRouter"]
+  subgraph Routes["<img src='https://cdn.simpleicons.org/react/61dafb' width='18'/> Route components"]
+    direction TB
     Entry["EntryPage<br/>3 jump cards"]
-    Lesson["Lesson<br/>useReducer + scripted phases"]
-    Tutorial["Tutorial<br/>6 centered slides"]
-    Boxy["BoxyPage<br/>Zustand store"]
+    Lesson["Lesson<br/>useReducer"]
+    Tutorial["Tutorial<br/>6 slides"]
+    Boxy["BoxyPage<br/>Zustand"]
     Trade["Game<br/>XState v5"]
   end
   subgraph Pure["Pure logic (no IO)"]
+    direction TB
     LessonScript["lesson/script.ts<br/>11 phases"]
-    BoxyDomain["boxy/domain<br/>Fraction · Polyomino · Grid · Rule · Generator"]
-    BoxyStore["boxy/store/gameStore<br/>placement + miss + snap"]
+    BoxyStore["boxy/store/gameStore"]
+    BoxyDomain["boxy/domain<br/>Fraction · Polyomino · Grid"]
     TradeMachine["game/machine.ts"]
     TradeValidate["game/validate.ts"]
     Curriculum["game/curriculum.ts"]
-  end
-  subgraph Server["Node web service"]
-    Express["server/index.mjs"]
-    Validate["/api/validate"]
-    Healthz["/healthz"]
-    SPA["dist/ → SPA fallback"]
-  end
-  subgraph Anthropic["Anthropic"]
-    Haiku["claude-haiku-4-5<br/>silent rubric scorer"]
   end
   Router --> Entry
   Router --> Lesson
@@ -216,14 +218,25 @@ flowchart TD
   Trade --> TradeMachine
   TradeMachine --> TradeValidate
   TradeValidate --> Curriculum
-  Trade -- "POST {explanation}" --> Validate
-  Validate -- "x-api-key" --> Haiku
-  Haiku -- "{score: 1-5}" --> Validate
-  Validate -- "{score}" --> Trade
+    </div>
+  </div>
+
+  <div class="panel p-3">
+    <div class="text-xs uppercase tracking-[0.18em] mb-3 px-3 pt-2" style="color: var(--muted);">B · Server hop (only on missed Trade serve)</div>
+    <div class="mermaid">
+flowchart LR
+  Browser["<img src='https://cdn.simpleicons.org/react/61dafb' width='18'/> React SPA<br/>(Trade /api/validate caller)"]
+  Express["<img src='https://cdn.simpleicons.org/express/e8e0cc' width='18'/> Express<br/>server/index.mjs"]
+  Validate["/api/validate"]
+  Healthz["/healthz"]
+  Haiku["<img src='https://cdn.simpleicons.org/anthropic/d4a373' width='18'/> Claude Haiku 4.5<br/>silent rubric scorer"]
+  Browser -- "POST {explanation}" --> Express
   Express --> Validate
   Express --> Healthz
-  Express --> SPA
-  Router -. "served by" .-> SPA
+  Validate -- "x-api-key" --> Haiku
+  Haiku -- "{score: 1-5}" --> Validate
+  Validate -- "{score}" --> Browser
+  Express -. "serves SPA" .-> Browser
     </div>
   </div>
 </section>
@@ -565,19 +578,23 @@ sequenceDiagram
 <section id="stack" class="max-w-6xl mx-auto px-6 py-10">
   <h2 class="text-3xl font-bold tracking-tight mb-6">Tech stack</h2>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Build</div><div class="font-semibold">Vite 8</div><div class="text-xs" style="color: var(--muted);">React 19 + TypeScript</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Styles</div><div class="font-semibold">Tailwind 3</div><div class="text-xs" style="color: var(--muted);">utilities only</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Routing</div><div class="font-semibold">react-router 7</div><div class="text-xs" style="color: var(--muted);">BrowserRouter</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Trade)</div><div class="font-semibold">XState 5</div><div class="text-xs" style="color: var(--muted);">@xstate/react</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Boxy)</div><div class="font-semibold">Zustand 5</div><div class="text-xs" style="color: var(--muted);">selector-based</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Trade)</div><div class="font-semibold">@dnd-kit/core 6</div><div class="text-xs" style="color: var(--muted);">touch sensors</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Boxy)</div><div class="font-semibold">Framer Motion 12</div><div class="text-xs" style="color: var(--muted);">dragSnapToOrigin</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Sound (Trade)</div><div class="font-semibold">Tone.js 15</div><div class="text-xs" style="color: var(--muted);">PolySynth / MonoSynth</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Server</div><div class="font-semibold">Express 4</div><div class="text-xs" style="color: var(--muted);">Node 20</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Deploy</div><div class="font-semibold">Render</div><div class="text-xs" style="color: var(--muted);">Node web service, Pro</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">LLM</div><div class="font-semibold">Claude Haiku 4.5</div><div class="text-xs" style="color: var(--muted);">silent rubric scorer</div></div>
-    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Lint</div><div class="font-semibold">ESLint 10</div><div class="text-xs" style="color: var(--muted);">typescript-eslint</div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/vite/646cff" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Build</div><div class="font-semibold">Vite 8</div><div class="text-xs" style="color: var(--muted);">React 19 + TypeScript</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/react/61dafb" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">UI runtime</div><div class="font-semibold">React 19</div><div class="text-xs" style="color: var(--muted);">strict TypeScript</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/typescript/3178c6" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Language</div><div class="font-semibold">TypeScript 6</div><div class="text-xs" style="color: var(--muted);">strict mode</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/tailwindcss/06b6d4" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Styles</div><div class="font-semibold">Tailwind 3</div><div class="text-xs" style="color: var(--muted);">utilities only</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/reactrouter/ca4245" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Routing</div><div class="font-semibold">react-router 7</div><div class="text-xs" style="color: var(--muted);">BrowserRouter</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><div style="width:24px;height:24px;border-radius:6px;background:#b8a7c9;color:#1a1a1a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;flex-shrink:0;">X</div><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Trade)</div><div class="font-semibold">XState 5</div><div class="text-xs" style="color: var(--muted);">@xstate/react</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><div style="width:24px;height:24px;border-radius:6px;background:#a8c69f;color:#1a1a1a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;flex-shrink:0;">Z</div><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Boxy)</div><div class="font-semibold">Zustand 5</div><div class="text-xs" style="color: var(--muted);">selector-based</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><div style="width:24px;height:24px;border-radius:6px;background:#e6c879;color:#1a1a1a;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;flex-shrink:0;">dnd</div><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Trade)</div><div class="font-semibold">@dnd-kit/core 6</div><div class="text-xs" style="color: var(--muted);">touch sensors</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/framer/0055ff" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Boxy)</div><div class="font-semibold">Framer Motion 12</div><div class="text-xs" style="color: var(--muted);">dragSnapToOrigin</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><div style="width:24px;height:24px;border-radius:6px;background:#3ad9a6;color:#1a1a1a;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;flex-shrink:0;">♪</div><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Sound (Trade)</div><div class="font-semibold">Tone.js 15</div><div class="text-xs" style="color: var(--muted);">PolySynth / MonoSynth</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/express/e8e0cc" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Server</div><div class="font-semibold">Express 4</div><div class="text-xs" style="color: var(--muted);">Node 20</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/nodedotjs/339933" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Runtime</div><div class="font-semibold">Node 20</div><div class="text-xs" style="color: var(--muted);">ESM</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/render/46e3b7" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Deploy</div><div class="font-semibold">Render</div><div class="text-xs" style="color: var(--muted);">Node web service, Pro</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/anthropic/d4a373" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">LLM</div><div class="font-semibold">Claude Haiku 4.5</div><div class="text-xs" style="color: var(--muted);">silent rubric scorer</div></div></div>
+    <div class="panel-inner p-4 flex items-start gap-3"><img src="https://cdn.simpleicons.org/eslint/4b32c3" width="24" height="24" alt="" /><div><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Lint</div><div class="font-semibold">ESLint 10</div><div class="text-xs" style="color: var(--muted);">typescript-eslint</div></div></div>
   </div>
+  <p class="mt-4 text-xs" style="color: var(--muted);">Logos via Simple Icons CDN. Libraries without a Simple Icons entry (XState, Zustand, @dnd-kit, Tone.js) carry a monogram chip in the brand's color so no card is iconless.</p>
 </section>
 
 <footer class="max-w-6xl mx-auto px-6 py-12 text-center">
