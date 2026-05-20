@@ -1,0 +1,65 @@
+# Render auto-deploy webhook bridge.
+#
+# WHY THIS EXISTS. The trade-mogging Render service uses the public-repo-URL
+# flow, so Render does NOT receive GitHub push webhooks on its own — the
+# dashboard's Auto-Deploy "On Commit" setting is moot for this connection
+# method. The Manual Deploy button was the only path until now, and it kept
+# letting deploys drift behind main. This workflow closes that gap without
+# installing the Render GitHub App: every push to main POSTs to the deploy
+# hook URL stored as repo secret RENDER_DEPLOY_HOOK_URL, and Render kicks
+# off a build the same way it would for the Manual Deploy button.
+#
+# The hook URL is a SECRET. It is stored as a repo secret so anyone who can
+# read this workflow file cannot read the key. Rotate the hook from the
+# Render dashboard Settings → Deploy Hook → Regenerate and re-set the secret
+# if it leaks.
+#
+# Concurrency group keeps two rapid pushes from racing each other into
+# competing builds; only the latest in-flight push survives.
+#
+# Same pattern as the boxy-fractions repo. Once standalone boxy-fractions
+# is retired and folded under /boxy here, this workflow is the single
+# deploy bridge that keeps the consolidated app in sync with main.
+
+name: Render auto-deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: render-deploy-main
+  cancel-in-progress: true
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST to Render deploy hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL secret is not set on this repo."
+            echo "::error::Fix: paste the URL from Render → Service → Settings → Deploy Hook"
+            echo "::error::      into 'Settings → Secrets and variables → Actions' as RENDER_DEPLOY_HOOK_URL."
+            exit 1
+          fi
+          http_code=$(curl -sS -o response.txt -w '%{http_code}' -X POST "$RENDER_DEPLOY_HOOK_URL")
+          echo "HTTP $http_code"
+          echo "--- response ---"
+          cat response.txt
+          echo
+          if [ "$http_code" -ge 400 ]; then
+            echo "::error::Render returned HTTP $http_code. The deploy was NOT triggered."
+            echo "::error::Common causes: hook URL revoked or regenerated; service paused; secret outdated."
+            exit 1
+          fi
+          deploy_id=$(grep -oE '"deploy"[[:space:]]*:[[:space:]]*\{[^}]*"id"[[:space:]]*:[[:space:]]*"[^"]+"' response.txt | grep -oE '"id"[[:space:]]*:[[:space:]]*"[^"]+"' | grep -oE '"[^"]+"$' | tr -d '"' || true)
+          if [ -n "${deploy_id:-}" ]; then
+            echo "Render deploy id: $deploy_id"
+            echo "Render dashboard: https://dashboard.render.com/web/srv-d85tgplckfvc73e63hkg/deploys/$deploy_id"
+          fi
