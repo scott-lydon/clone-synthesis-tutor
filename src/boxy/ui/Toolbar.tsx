@@ -4,9 +4,16 @@ import { useGameStore } from "../store/gameStore";
  * Toolbar with: New round, Submit, Reveal, plus a live two-line stat that
  * shows BOTH the current fill (updates with every placement) and the ceiling
  * possible for this round. The ceiling is computed from the generated
- * solution; it is almost always < 100% because the round generator leaves
- * intentional voids in the grid. Without showing the ceiling, "you got 77%"
- * sounds like a failure when it might actually be perfect for this puzzle.
+ * solution; it is almost always less than the full grid because the round
+ * generator leaves intentional voids. Without showing the ceiling, "you got
+ * 23 cells" sounds like a failure when it might actually be perfect for this
+ * puzzle.
+ *
+ * Readout shape: filled/total and possible/total as plain fractions. Younger
+ * students who haven't been introduced to percentages yet read "12 / 30"
+ * directly; older students still parse it instantly. The fraction also
+ * matches the game's rule vocabulary (everything else here is a count or a
+ * ratio, never a percent).
  *
  * Styling: dusty pastel palette to match the rules panel. Bright gradient
  * amber was the previous look and clashed with the calm rule tiles next to it.
@@ -19,14 +26,12 @@ export function Toolbar() {
   const submitted = useGameStore((s) => s.submitted);
   const revealed = useGameStore((s) => s.revealedSolution);
   const grid = useGameStore((s) => s.grid);
-  const max = useGameStore((s) => s.maxPossiblePercent);
-  const misses = useGameStore((s) => s.missCount);
+  const totalCells = useGameStore((s) => s.totalCells);
+  const possibleCells = useGameStore((s) => s.possibleCells);
   const placementsLen = grid.placements.length;
   const anchorOnly = grid.placements.every((p) => p.anchor);
-  const total = grid.cols * grid.rows;
   let filled = 0;
   for (const p of grid.placements) filled += p.piece.squareCount;
-  const current = total === 0 ? 0 : Math.round((filled / total) * 100);
   // Reset is only meaningful once the player has placed at least one piece
   // (anchor-only state = same as a reset). Greying-out when nothing-to-reset
   // prevents the "I clicked but nothing changed" confusion.
@@ -80,27 +85,27 @@ export function Toolbar() {
       >
         Reveal answer
       </button>
-      <FillReadout current={current} max={max} misses={misses} />
+      <FillReadout filled={filled} possible={possibleCells} total={totalCells} />
     </div>
   );
 }
 
 /**
- * Three columns inside one chip: live "filled" %, ceiling "possible" %, and
- * "misses" — the number of placement rejections this round. Misses lights up
- * after the first rejection so it stays inert (gray, 0) when the player is
- * thinking clearly, and tints honey once they start collecting rejections.
- * The chip is a soft pressure against drag-and-pray, not a punishment;
- * resetting (Reset / New round) clears it back to 0.
+ * Two stacked rows: live "filled" and the ceiling "possible", both as
+ * fractions over the grid's total cell count. Updates on every placement
+ * (filled) / on every new round (possible). Total is the same denominator
+ * on both rows so the two ratios compare cleanly at a glance — different
+ * denominators across the two readouts would have forced the student to
+ * normalize before comparing.
  */
 function FillReadout({
-  current,
-  max,
-  misses,
+  filled,
+  possible,
+  total,
 }: {
-  current: number;
-  max: number;
-  misses: number;
+  filled: number;
+  possible: number;
+  total: number;
 }) {
   return (
     <div
@@ -112,27 +117,27 @@ function FillReadout({
     >
       <div className="flex flex-col leading-tight">
         <span className="text-[10px] uppercase tracking-wider text-slate-500">filled</span>
-        <span className="text-lg font-semibold" style={{ color: "#e8d9a8" }}>
-          {current}%
+        <span
+          className="text-lg font-semibold font-mono"
+          style={{ color: "#e8d9a8" }}
+          aria-label={`${filled} of ${total} cells filled`}
+        >
+          {filled}
+          <span style={{ color: "rgba(212, 200, 178, 0.45)" }}>/</span>
+          {total}
         </span>
       </div>
       <div className="w-px h-8" style={{ background: "rgba(212, 200, 178, 0.15)" }} />
       <div className="flex flex-col leading-tight">
         <span className="text-[10px] uppercase tracking-wider text-slate-500">possible</span>
-        <span className="text-lg font-semibold" style={{ color: "rgba(212, 200, 178, 0.7)" }}>
-          {max}%
-        </span>
-      </div>
-      <div className="w-px h-8" style={{ background: "rgba(212, 200, 178, 0.15)" }} />
-      <div className="flex flex-col leading-tight" title="placements rejected this attempt">
-        <span className="text-[10px] uppercase tracking-wider text-slate-500">misses</span>
         <span
-          className="text-lg font-semibold"
-          style={{
-            color: misses === 0 ? 'rgba(212, 200, 178, 0.45)' : '#e6c879',
-          }}
+          className="text-lg font-semibold font-mono"
+          style={{ color: "rgba(212, 200, 178, 0.7)" }}
+          aria-label={`${possible} of ${total} cells reachable`}
         >
-          {misses}
+          {possible}
+          <span style={{ color: "rgba(212, 200, 178, 0.35)" }}>/</span>
+          {total}
         </span>
       </div>
     </div>

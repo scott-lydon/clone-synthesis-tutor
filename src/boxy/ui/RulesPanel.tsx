@@ -59,6 +59,14 @@ export function RulesPanel() {
  *
  * Single baseline, big numbers, colon-spaced. No two-line stacking, no
  * mismatched labels.
+ *
+ * The swatch is a miniature game piece, not a solid color chip — same cream
+ * cell background (#f5efe3) the placed pieces use on the grid, with a single
+ * colored triangle pointing into the cell. Matching the on-grid visual idiom
+ * here means the kid sees the rule as "the kind of triangle that has to
+ * appear at a seam," not as an abstract palette token. The triangle uses the
+ * same N-side wedge geometry as PieceView's ColoredSides so the swatch and
+ * the placed pieces read as the same vocabulary.
  */
 function RuleRow({
   color,
@@ -78,14 +86,7 @@ function RuleRow({
         boxShadow: `inset 0 0 0 1px ${fill}40`,
       }}
     >
-      <div
-        className="w-9 h-9 rounded-lg flex-shrink-0"
-        style={{
-          background: fill,
-          boxShadow: `0 4px 10px ${fill}30`,
-        }}
-        aria-label={color}
-      />
+      <RuleSwatch color={color} />
       <div className="flex items-baseline gap-2 flex-1">
         <span
           className="text-slate-100 font-mono text-2xl font-semibold tabular-nums"
@@ -113,5 +114,46 @@ function RuleRow({
         </span>
       </div>
     </div>
+  );
+}
+
+/**
+ * Miniature game-piece swatch: a cream cell (the same #f5efe3 every placed
+ * piece uses) with a single colored triangle from the top corners to the cell
+ * center. Mirrors PieceView/ColoredSides geometry for the N (top) side so the
+ * rule swatch reads as the same visual unit as a placed piece's seam.
+ */
+function RuleSwatch({ color }: { color: keyof typeof RULE_COLOR_FILL }) {
+  const fill = RULE_COLOR_FILL[color];
+  const px = 36; // matches the previous w-9 h-9 swatch dimensions
+  const cx = px / 2;
+  const cy = px / 2;
+  return (
+    <svg
+      width={px}
+      height={px}
+      viewBox={`0 0 ${px} ${px}`}
+      className="flex-shrink-0 rounded-lg overflow-visible"
+      style={{ boxShadow: `0 4px 10px ${fill}30` }}
+      aria-label={color}
+      role="img"
+    >
+      {/* Cream cell background — same color the placed pieces use on the grid. */}
+      <rect x={0} y={0} width={px} height={px} fill="#f5efe3" rx={6} ry={6} />
+      {/* North-side rule triangle. Same wedge shape as PieceView's ColoredSides. */}
+      <polygon points={`0,0 ${px},0 ${cx},${cy}`} fill={fill} />
+      {/* Subtle outline to separate from the panel background. */}
+      <rect
+        x={0}
+        y={0}
+        width={px}
+        height={px}
+        fill="none"
+        stroke="rgba(10, 14, 26, 0.5)"
+        strokeWidth={1}
+        rx={6}
+        ry={6}
+      />
+    </svg>
   );
 }

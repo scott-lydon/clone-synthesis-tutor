@@ -60,4 +60,40 @@ export class Piece {
     if (!cellColors) return null;
     return cellColors[side] ?? null;
   }
+
+  /**
+   * Return a new Piece identical to this one except every (cell, side) pair in
+   * `cleared` has its color removed. Used by the placement pipeline: when a
+   * placed neighbor's color outranks the new piece's color at a seam, the new
+   * piece's conflicting triangle gets cleared so the seam reads as a single
+   * color (placed's). Same id and polyomino — only the side-color map shrinks.
+   *
+   * Implementation: copy the existing sideColors map, then for each entry in
+   * `cleared` rewrite that cell's record without the named side. If a cell
+   * ends up with zero colored sides, drop the cell entry entirely so the
+   * downstream "every cell in sideColors must be a real polyomino cell"
+   * invariant in the Piece constructor stays clean.
+   */
+  withClearedColors(
+    cleared: ReadonlyArray<{ localCol: number; localRow: number; side: Side }>,
+  ): Piece {
+    if (cleared.length === 0) return this;
+    const next = new Map<string, Partial<Record<Side, RuleColor>>>();
+    for (const [cellKey, sides] of this.sideColors) {
+      next.set(cellKey, { ...sides });
+    }
+    for (const { localCol, localRow, side } of cleared) {
+      const cellKey = `${localCol},${localRow}`;
+      const existing = next.get(cellKey);
+      if (!existing) continue;
+      const { [side]: _drop, ...rest } = existing;
+      void _drop; // explicit discard; we ARE clearing this side
+      if (Object.keys(rest).length === 0) {
+        next.delete(cellKey);
+      } else {
+        next.set(cellKey, rest);
+      }
+    }
+    return new Piece(this.id, this.polyomino, next);
+  }
 }

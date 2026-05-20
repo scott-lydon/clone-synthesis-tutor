@@ -1,16 +1,19 @@
 /**
  * /boxy route — full polyomino-placement game.
  *
- * Ported from the standalone boxy-fractions repo. Layout mirrors that
- * repo's App.tsx so the game looks identical inside this unified app and
- * inside its original deployment.
+ * Mirrors the standalone boxy-fractions App.tsx layout: Text column on the
+ * LEFT (Rules), Interaction column on the RIGHT (Grid, MessagesPanel, then
+ * Parts and Dropped baskets side-by-side). The standalone repo's separate
+ * Render service has been consolidated into this one, so users hitting
+ * /boxy here get the same experience the standalone URL used to provide.
  *
- * The Stage 1 cross-link placeholder is replaced; users who deep-link to
- * /boxy now play the actual game instead of bouncing to an external URL.
+ * The inline How-to-play carousel lives at /tutorial as full-page centered
+ * slides; the cross-link in the subtitle sends players who want a refresher
+ * there without competing for attention in the play area.
  */
 import { Link } from 'react-router-dom';
 import { GridView } from '../boxy/ui/GridView';
-import { Tray } from '../boxy/ui/Tray';
+import { Tray, Dropped } from '../boxy/ui/Tray';
 import { RulesPanel } from '../boxy/ui/RulesPanel';
 import { Toolbar } from '../boxy/ui/Toolbar';
 import { MessagesPanel } from '../boxy/ui/MessagesPanel';
@@ -39,19 +42,26 @@ export const BoxyPage: React.FC = () => (
       <Toolbar />
     </header>
 
-    {/* The inline How-to-play carousel that used to live below the tray now
-        lives at /tutorial as full-page centered slides. The deep-link above
-        sends players who want a refresher there; players who already know
-        the rules see a cleaner play area without competing chrome. */}
-    <main className="px-6 md:px-12 pb-16 flex flex-col lg:flex-row gap-10 max-w-6xl mx-auto">
-      <section className="flex flex-col gap-8 flex-1 items-center lg:items-start">
-        <GridView />
-        <MessagesPanel />
-        <Tray />
-      </section>
-      <aside className="w-full lg:w-72 flex-shrink-0">
+    <main className="px-6 md:px-12 pb-16 grid gap-10 max-w-6xl mx-auto lg:grid-cols-[18rem_1fr]">
+      {/* TEXT column (left) — Rules. Drops below the interaction on narrow
+          screens because a scrolling reader needs the rule context before
+          the grid. */}
+      <aside className="flex flex-col gap-8 order-1 min-w-0">
         <RulesPanel />
       </aside>
+
+      {/* INTERACTION column (right) — Grid, in-flight feedback message,
+          then Parts and Dropped baskets side by side. The two baskets sit
+          in a tight 2-col grid so the "alive vs spent" comparison is one
+          glance, not a scroll. */}
+      <section className="flex flex-col gap-6 order-2 items-start min-w-0">
+        <GridView />
+        <MessagesPanel />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <Tray />
+          <Dropped />
+        </div>
+      </section>
     </main>
   </div>
 );
