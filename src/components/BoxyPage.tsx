@@ -1,40 +1,50 @@
 /**
- * /boxy route — Boxy polyomino puzzle placeholder for Stage 1.
+ * /boxy route — full polyomino-placement game.
  *
- * Stage 3 of the unified-app build replaces this placeholder with the full
- * polyomino-placement game ported from the boxy-fractions repo (domain types,
- * Zustand store, drag-drop UI, the Reset button just shipped, etc.). The
- * placeholder exists so the route resolves and so a direct-jump from the
- * entry page lands somewhere useful before the port lands.
+ * Ported from the standalone boxy-fractions repo. Layout mirrors that
+ * repo's App.tsx so the game looks identical inside this unified app and
+ * inside its original deployment.
  *
- * The cross-link to the still-deployed standalone boxy-fractions site keeps
- * the player unblocked in the meantime.
+ * The Stage 1 cross-link placeholder is replaced; users who deep-link to
+ * /boxy now play the actual game instead of bouncing to an external URL.
  */
-import { Link } from 'react-router-dom';
+import { GridView } from '../boxy/ui/GridView';
+import { Tray } from '../boxy/ui/Tray';
+import { RulesPanel } from '../boxy/ui/RulesPanel';
+import { Toolbar } from '../boxy/ui/Toolbar';
+import { MessagesPanel } from '../boxy/ui/MessagesPanel';
+import { HowToPlay } from '../boxy/ui/HowToPlay';
 
 export const BoxyPage: React.FC = () => (
-  <div className="min-h-screen flex flex-col items-center justify-center p-6 gap-6 text-center">
-    <h2 className="text-3xl font-display text-lantern-gold tracking-widest">
-      Boxy Puzzles
-    </h2>
-    <p className="text-text-muted max-w-md">
-      Place polyomino pieces so the boxes that touch satisfy a fraction
-      ratio. Reset to retry; New round to start over.
-    </p>
-    <p className="text-text-muted text-sm max-w-md">
-      The full game is shipping into this page in the next build. For now it
-      lives at a separate URL while we port it.
-    </p>
-    <a
-      href="https://boxy-fractions.onrender.com"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="px-5 py-3 rounded-xl bg-lantern-gold/20 border-2 border-lantern-gold/40 text-lantern-gold font-display tracking-wider active:scale-95"
-    >
-      Open Boxy in a new tab →
-    </a>
-    <Link to="/" className="text-text-muted text-sm hover:text-text-primary">
-      ← back to home
-    </Link>
+  <div className="min-h-screen w-full overflow-auto text-slate-100">
+    <header className="px-6 md:px-12 pt-6 pb-4 flex items-center justify-between gap-6 flex-wrap max-w-6xl mx-auto">
+      <div>
+        <h1
+          className="font-semibold text-3xl md:text-4xl tracking-tight"
+          style={{ color: '#e8e0cc' }}
+        >
+          Boxy{' '}
+          <span style={{ color: '#e6c879' /* dusty honey, matches yellow rule */ }}>
+            Fractions
+          </span>
+        </h1>
+        <p className="text-sm mt-1.5 max-w-md" style={{ color: 'rgba(212, 200, 178, 0.55)' }}>
+          Place pieces so touching pieces share one of the count ratios in the rules panel.
+        </p>
+      </div>
+      <Toolbar />
+    </header>
+
+    <main className="px-6 md:px-12 pb-16 flex flex-col lg:flex-row gap-10 max-w-6xl mx-auto">
+      <section className="flex flex-col gap-8 flex-1 items-center lg:items-start">
+        <GridView />
+        <MessagesPanel />
+        <Tray />
+        <HowToPlay />
+      </section>
+      <aside className="w-full lg:w-72 flex-shrink-0">
+        <RulesPanel />
+      </aside>
+    </main>
   </div>
 );
