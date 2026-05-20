@@ -125,8 +125,15 @@ export const Lesson: React.FC = () => {
   const isLast = state.phaseId === PHASES[PHASES.length - 1].id;
 
   return (
-    <div className="min-h-screen p-4 md:p-6 flex flex-col">
-      <header className="mb-4">
+    // h-screen (not min-h-screen) so the page is the viewport — that lets
+    // flex-1 inside the main panel TAKE the remaining space instead of
+    // PUSHING the footer below the viewport. The previous min-h-screen
+    // grew with content and shoved the answer chips off-screen.
+    //
+    // Padding stays internal. The SiteNav above this is sticky and outside
+    // this h-screen so it doesn't fight for vertical space.
+    <div className="h-[calc(100vh-44px)] p-3 md:p-5 flex flex-col overflow-hidden">
+      <header className="shrink-0 mb-3">
         <div className="text-text-muted text-[11px] uppercase tracking-[0.18em] mb-1">
           Lesson — fraction equivalence
         </div>
@@ -136,8 +143,11 @@ export const Lesson: React.FC = () => {
         <PhaseProgress phaseId={state.phaseId} />
       </header>
 
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[420px]">
-        <div className="min-h-[360px]">
+      {/* min-h-0 is the crucial flexbox idiom that lets this flex child
+          shrink below its content height. Without it, the chat's
+          overflow-y-auto never engages and the footer is pushed off-screen. */}
+      <main className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="min-h-0">
           <LessonChat
             lines={phase.chat}
             resetKey={phase.id}
@@ -145,7 +155,7 @@ export const Lesson: React.FC = () => {
           />
         </div>
         <div
-          className="flex flex-col items-center justify-center p-6 rounded-2xl"
+          className="flex flex-col items-center justify-center p-4 rounded-2xl overflow-auto"
           style={{
             background: 'rgba(31, 41, 55, 0.45)',
             boxShadow: 'inset 0 0 0 1px rgba(212, 200, 178, 0.10)',
@@ -160,7 +170,11 @@ export const Lesson: React.FC = () => {
         </div>
       </main>
 
-      <footer className="mt-4 min-h-[64px] flex flex-col items-center gap-2">
+      {/* shrink-0 keeps the footer (remediation + advance affordance) anchored
+          to the bottom of the viewport. Whatever it contains MUST be visible
+          — that's the whole point of having an advance affordance in the
+          first place. */}
+      <footer className="shrink-0 mt-3 min-h-[64px] flex flex-col items-center gap-2">
         {state.remediation && (
           <div
             className="rounded-md px-4 py-2 text-sm max-w-2xl text-center"
