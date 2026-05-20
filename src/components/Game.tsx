@@ -121,12 +121,13 @@ export const Game: React.FC = () => {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="h-screen flex flex-col p-3 overflow-hidden">
-        {/* Top bar: cash + progress */}
+        {/* Top bar: cash only. The "Customer N / N" queue counter that used
+            to sit here exposed how many customers were coming, which fights
+            the "one customer at a time" feel. The kid should be focused on
+            this order, not on the queue. Cash going up is the only persistent
+            progress signal we need. */}
         <div className="flex justify-between items-center mb-3">
           <CashStack cash={context.cash} />
-          <div className="text-text-muted text-sm font-semibold">
-            Customer {context.customerIndex + 1} / {CUSTOMERS.length}
-          </div>
         </div>
 
         {/* Customer card */}
