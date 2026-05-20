@@ -1,73 +1,62 @@
 /**
- * Tutor chat column. Lines arrive one at a time on a small cadence, lifted
- * from the LESSON_SCRIPT.md style notes — warm, patient, no exclamation
- * stacks, no emojis. The kid reads at their own pace; lines pile up rather
- * than vanish so a slower reader does not lose context.
+ * Tutor text region. NOT a chat. The earlier version rendered each scripted
+ * line as a chat bubble that arrived on a typed cadence — visually that
+ * read as a messaging app and implied the student would reply. They don't.
+ * The student's reply IS the manipulative on the right side of the lesson.
+ * The bubbles, the typed delay, and the stacked alignment were all costs
+ * with no benefit, so they're gone.
  *
- * The component is dumb. It receives the queue of {@link TutorLine} for the
- * current phase, animates them in, and signals "all lines done" via
- * onAllLinesShown so the parent can reveal the advance affordance (Continue
- * button, multiple-choice question, etc.). No side-effects on global state.
+ * New shape: one quiet text region with all of the current phase's lines
+ * laid out as short paragraphs. Same width and panel surface as the
+ * surrounding lesson layout, no bubble chrome, no "you have a new message"
+ * affordance. The student reads top-to-bottom and acts on the right.
+ *
+ * The props (`lines`, `onAllLinesShown`, `resetKey`) are kept so Lesson.tsx
+ * doesn't have to change. onAllLinesShown fires immediately on mount /
+ * phase change since there's nothing to "wait for" anymore — the advance
+ * affordance is gated only by the student's interaction with the
+ * manipulative, not by a typing animation.
  */
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { TutorLine } from './script';
 
 interface Props {
   readonly lines: readonly TutorLine[];
   readonly onAllLinesShown?: () => void;
-  /** Reset the line queue when this key changes (i.e., phase changed). */
+  /** Reset key (phase id). Triggers re-firing onAllLinesShown for the new phase. */
   readonly resetKey: string;
 }
 
 export const LessonChat: React.FC<Props> = ({ lines, onAllLinesShown, resetKey }) => {
-  const [visibleCount, setVisibleCount] = useState(0);
-
-  // Reset to zero whenever the phase changes (lines + resetKey both change),
-  // then animate forward.
+  // Notify the parent that the text is "shown" the instant the phase
+  // mounts or changes. There's no animation queue any more, so chatDone
+  // can be true immediately. The advance affordance reveals on the same
+  // tick, which is fine: the student is reading the text while reaching
+  // for the manipulative — they don't need a delay to confirm they saw
+  // the text.
   useEffect(() => {
-    setVisibleCount(0);
-  }, [resetKey]);
-
-  useEffect(() => {
-    if (visibleCount >= lines.length) {
-      if (onAllLinesShown && lines.length > 0) onAllLinesShown();
-      return;
-    }
-    const pause = lines[visibleCount]?.pauseAfterMs ?? 700;
-    const t = setTimeout(() => {
-      setVisibleCount((c) => c + 1);
-    }, pause);
-    return () => clearTimeout(t);
-  }, [visibleCount, lines, onAllLinesShown]);
+    if (onAllLinesShown && lines.length > 0) onAllLinesShown();
+    // Re-fire on phase change. resetKey is the phase id.
+  }, [resetKey, lines.length, onAllLinesShown]);
 
   return (
     <div
-      className="flex flex-col gap-2.5 p-5 rounded-2xl h-full overflow-y-auto"
+      className="flex flex-col gap-3 p-6 rounded-2xl h-full overflow-y-auto text-text-primary"
       style={{
         background: 'rgba(20, 27, 41, 0.55)',
         boxShadow: 'inset 0 0 0 1px rgba(212, 200, 178, 0.10)',
       }}
       aria-live="polite"
-      aria-label="Tutor"
+      aria-label="Lesson text"
     >
-      {lines.slice(0, visibleCount + 1).map((line, i) => (
-        <div
+      {lines.map((line, i) => (
+        <p
           key={`${resetKey}-${i}`}
-          className="rounded-xl px-4 py-2.5 text-text-primary leading-relaxed"
-          style={{
-            background: 'rgba(31, 41, 55, 0.55)',
-            boxShadow: 'inset 0 0 0 1px rgba(230, 200, 121, 0.18)',
-            maxWidth: '90%',
-            animation: 'fadeUp 0.32s ease',
-          }}
+          className="leading-relaxed text-base md:text-lg"
         >
           {line.text}
-        </div>
+        </p>
       ))}
-      <style>{`@keyframes fadeUp {
-        from { opacity: 0; transform: translateY(8px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }`}</style>
     </div>
   );
 };
