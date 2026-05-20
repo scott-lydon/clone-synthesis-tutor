@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Trade Mogging — Architecture</title>
+<title>Fraction Bazaar — Architecture</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script type="module">
   import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
@@ -12,12 +12,12 @@
     theme: 'dark',
     themeVariables: {
       darkMode: true,
-      primaryColor: '#152340',
+      primaryColor: '#1f2f55',
       primaryTextColor: '#f2efe6',
-      primaryBorderColor: '#f5c542',
+      primaryBorderColor: '#e6c879',
       lineColor: '#a8b3cf',
-      secondaryColor: '#1f2f55',
-      tertiaryColor: '#2c3f6e',
+      secondaryColor: '#2c3f6e',
+      tertiaryColor: '#152340',
       background: '#010d29',
       fontFamily: 'ui-sans-serif, system-ui, sans-serif'
     }
@@ -26,468 +26,624 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root {
-    --bazaar-night: #010d29;
-    --bazaar-stall: #152340;
-    --bazaar-panel: #1f2f55;
-    --bazaar-edge: #2c3f6e;
-    --lantern-gold: #f5c542;
-    --lantern-deep: #c98e1c;
-    --spice-red: #d9533a;
-    --mint-fresh: #3ad9a6;
-    --sand-warm: #e8d4a8;
-    --text-primary: #f2efe6;
-    --text-muted: #a8b3cf;
+    --bg: #010d29;
+    --bg-2: #0f1424;
+    --panel: #152340;
+    --panel-2: #1f2f55;
+    --edge: #2c3f6e;
+    --accent: #e6c879;
+    --accent-2: #e8a87c;
+    --green: #a8c69f;
+    --purple: #b8a7c9;
+    --mint: #3ad9a6;
+    --text: #f2efe6;
+    --muted: #a8b3cf;
   }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
-    background-color: var(--bazaar-night);
-    color: var(--text-primary);
-    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-    background-image: radial-gradient(ellipse at center top, rgba(245, 197, 66, 0.06) 0%, transparent 65%);
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(230, 200, 121, 0.10), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 30%, rgba(184, 167, 201, 0.08), transparent),
+      radial-gradient(ellipse 50% 40% at 0% 60%, rgba(232, 168, 124, 0.06), transparent),
+      var(--bg);
+    color: var(--text);
+    font-family: 'ui-sans-serif', system-ui, '-apple-system', sans-serif;
+    letter-spacing: -0.01em;
   }
-  .panel { background-color: var(--bazaar-panel); border: 2px solid var(--bazaar-edge); }
-  .panel-stall { background-color: var(--bazaar-stall); border: 2px solid var(--bazaar-edge); }
-  .accent { color: var(--lantern-gold); }
-  .accent-mint { color: var(--mint-fresh); }
-  .accent-red { color: var(--spice-red); }
-  .display-font { font-family: "Bebas Neue", Impact, sans-serif; letter-spacing: 0.08em; }
-  .pros { border-left: 4px solid var(--mint-fresh); padding-left: 0.75rem; }
-  .cons { border-left: 4px solid var(--spice-red); padding-left: 0.75rem; }
-  a { color: var(--lantern-gold); }
-  a:hover { color: var(--mint-fresh); }
-  .mermaid { background: var(--bazaar-night); border-radius: 1rem; padding: 1rem; }
-  .nav-sticky {
-    position: sticky; top: 0; z-index: 50;
-    background: rgba(1, 13, 41, 0.9);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--bazaar-edge);
+  .panel {
+    background: rgba(31, 47, 85, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(212, 200, 178, 0.12);
+    border-radius: 1rem;
   }
+  .panel-inner {
+    background: rgba(15, 20, 36, 0.65);
+    box-shadow: inset 0 0 0 1px rgba(212, 200, 178, 0.08);
+    border-radius: 0.75rem;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(31, 47, 85, 0.55);
+    color: var(--muted);
+    box-shadow: inset 0 0 0 1px rgba(212, 200, 178, 0.18);
+  }
+  .chip-accent { color: var(--accent); box-shadow: inset 0 0 0 1px rgba(230, 200, 121, 0.45); }
+  .chip-green { color: var(--green); box-shadow: inset 0 0 0 1px rgba(168, 198, 159, 0.45); }
+  .chip-purple { color: var(--purple); box-shadow: inset 0 0 0 1px rgba(184, 167, 201, 0.45); }
+  .chip-terra { color: var(--accent-2); box-shadow: inset 0 0 0 1px rgba(232, 168, 124, 0.45); }
+  .pros-cons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .pro { color: var(--green); }
+  .con { color: var(--accent-2); }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 0.9rem; }
+  thead th {
+    text-align: left;
+    background: rgba(15, 20, 36, 0.7);
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    padding: 0.6rem 0.8rem;
+  }
+  tbody td {
+    background: rgba(31, 47, 85, 0.35);
+    padding: 0.6rem 0.8rem;
+    vertical-align: top;
+    border-top: 1px solid rgba(212, 200, 178, 0.08);
+  }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.85em; color: var(--accent); }
+  .mermaid { background: var(--panel); border-radius: 0.75rem; padding: 1rem; }
+  .nav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 9999px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color 0.18s, background 0.18s;
+  }
+  .nav-pill:hover { color: var(--text); background: rgba(31, 47, 85, 0.4); }
+  .stat-num { font-size: 2rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 </head>
 <body class="min-h-screen">
 
-<!-- Sticky nav -->
-<nav class="nav-sticky px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-  <span class="display-font text-xl accent">TRADE MOGGING</span>
-  <a href="#problem">Problem</a>
-  <a href="#topology">Topology</a>
-  <a href="#components">Components</a>
-  <a href="#dataflow">Data flow</a>
-  <a href="#decisions">Decisions</a>
-  <a href="#tradeoffs">Trade-offs</a>
-  <a href="#ai-validation">AI validation</a>
-  <a href="#cost">Cost</a>
-  <a href="#stack">Stack</a>
-  <span class="ml-auto"><a href="https://github.com/scott-lydon/clone-synthesis-tutor" target="_blank" rel="noopener">Repo →</a></span>
+<nav class="sticky top-0 z-40 backdrop-blur-md" style="background: rgba(1, 13, 41, 0.78); box-shadow: inset 0 -1px 0 rgba(212, 200, 178, 0.10);">
+  <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
+    <a href="#top" class="font-semibold tracking-widest text-sm" style="color: var(--accent);">▸ FRACTION BAZAAR</a>
+    <div class="flex flex-wrap gap-1">
+      <a class="nav-pill" href="#topology">Topology</a>
+      <a class="nav-pill" href="#routes">Routes</a>
+      <a class="nav-pill" href="#layers">Layers</a>
+      <a class="nav-pill" href="#state">State</a>
+      <a class="nav-pill" href="#boxy">Boxy contract</a>
+      <a class="nav-pill" href="#trade">Trade machine</a>
+      <a class="nav-pill" href="#flow">Data flow</a>
+      <a class="nav-pill" href="#decisions">Decisions</a>
+      <a class="nav-pill" href="#tradeoffs">Trade-offs</a>
+      <a class="nav-pill" href="#cost">Cost</a>
+      <a class="nav-pill" href="#stack">Stack</a>
+    </div>
+  </div>
 </nav>
 
-<!-- Hero -->
-<header class="px-6 py-12 max-w-5xl mx-auto text-center">
-  <h1 class="display-font text-7xl md:text-8xl accent mb-2">TRADE MOGGING</h1>
-  <p class="text-xl mb-8" style="color: var(--text-muted)">A capybara learns fraction equivalence by outsmarting goofy animal vendors at a Middle Eastern bazaar.</p>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-3xl mx-auto">
-    <div class="panel rounded-2xl p-4">
-      <div class="display-font text-4xl accent">6</div>
-      <div class="text-sm" style="color: var(--text-muted)">customers per run</div>
+<header id="top" class="max-w-6xl mx-auto px-6 pt-12 pb-10">
+  <div class="text-xs uppercase tracking-[0.20em] mb-3" style="color: var(--muted);">Gauntlet G5 · Week 4 · Synthesis hiring-partner submission</div>
+  <h1 class="text-5xl md:text-6xl font-bold tracking-tight mb-3" style="color: var(--text);">
+    Fraction <span style="color: var(--accent);">Bazaar</span>
+  </h1>
+  <p class="text-lg max-w-3xl leading-relaxed" style="color: var(--muted);">
+    A single-page web app that teaches a 9-year-old fraction equivalence end-to-end: a splash, a from-zero scripted lesson, a six-slide tutorial, a polyomino placement game with strict color rules, and a bazaar-vendor trading game with an LLM-scored remediation lesson. One Render service. Four routes. Three different state libraries by design.
+  </p>
+  <div class="mt-6 flex flex-wrap gap-3">
+    <a href="https://trade-mogging-v7ua.onrender.com/" target="_blank" class="px-5 py-2.5 rounded-full font-semibold" style="background: rgba(230, 200, 121, 0.18); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(230, 200, 121, 0.40);">Live site →</a>
+    <a href="https://github.com/scott-lydon/clone-synthesis-tutor" target="_blank" class="px-5 py-2.5 rounded-full font-medium" style="background: rgba(31, 47, 85, 0.45); color: var(--muted); box-shadow: inset 0 0 0 1px rgba(212, 200, 178, 0.18);">GitHub repo →</a>
+  </div>
+
+  <div class="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="panel p-5">
+      <div class="stat-label mb-1">Routes</div>
+      <div class="stat-num">5</div>
+      <div class="text-xs mt-1" style="color: var(--muted);">/, lesson, tutorial, boxy, trade</div>
     </div>
-    <div class="panel rounded-2xl p-4">
-      <div class="display-font text-4xl accent">11</div>
-      <div class="text-sm" style="color: var(--text-muted)">knowledge atoms</div>
+    <div class="panel p-5">
+      <div class="stat-label mb-1">Lesson phases</div>
+      <div class="stat-num">11</div>
+      <div class="text-xs mt-1" style="color: var(--muted);">from-zero through equivalence</div>
     </div>
-    <div class="panel rounded-2xl p-4">
-      <div class="display-font text-4xl accent">~$0.0003</div>
-      <div class="text-sm" style="color: var(--text-muted)">AI cost per kid per session</div>
+    <div class="panel p-5">
+      <div class="stat-label mb-1">Tutorial slides</div>
+      <div class="stat-num">6</div>
+      <div class="text-xs mt-1" style="color: var(--muted);">centered, SVG art, keyboard nav</div>
     </div>
-    <div class="panel rounded-2xl p-4">
-      <div class="display-font text-4xl accent-mint">0</div>
-      <div class="text-sm" style="color: var(--text-muted)">LLM tokens shown to the kid</div>
+    <div class="panel p-5">
+      <div class="stat-label mb-1">Render services</div>
+      <div class="stat-num">1</div>
+      <div class="text-xs mt-1" style="color: var(--muted);">SPA + /api/validate, single URL</div>
     </div>
   </div>
 </header>
 
-<!-- Problem -->
-<section id="problem" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">PROBLEM</h2>
-  <div class="grid md:grid-cols-2 gap-6">
-    <div class="panel-stall rounded-2xl p-6">
-      <h3 class="display-font text-2xl accent-red mb-2">Edtech today</h3>
-      <p>Pizza fraction sims with confetti. XP bars. Daily streak counters. The kid plays for the dopamine, the math is incidental. Patrick Skinner calls this the Aesthetic Paradox. Knewton, AltSchool, Byju's all hit this rake.</p>
-    </div>
-    <div class="panel-stall rounded-2xl p-6">
-      <h3 class="display-font text-2xl accent-mint mb-2">Trade Mogging</h3>
-      <p>The kid wants to mog the vendor. The only way to mog is the cheapest combo. The only way to find the cheapest combo is to see equivalent fractions. The math IS the dopamine loop. The off-ramp is built in. The bazaar closes.</p>
-    </div>
-  </div>
-</section>
-
-<!-- Topology -->
-<section id="topology" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">TOPOLOGY</h2>
-  <div class="panel rounded-2xl p-6">
-<pre class="mermaid">
+<section id="topology" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">One-look topology</h2>
+  <p class="mb-6" style="color: var(--muted);">Browser-side routing fans out to four route components. Three of them stay client-only; Trade Mogging calls the Node server once per missed serve, which forwards a scoring request to Anthropic Claude Haiku.</p>
+  <div class="panel p-3">
+    <div class="mermaid">
 flowchart TD
-  subgraph Browser["Browser — iPad Safari"]
-    UI["App + Game (XState)"]
-    DnD["@dnd-kit/core<br/>touch sensor"]
-    Sound["Tone.js audio"]
-    Art["SVG vendors + food"]
+  subgraph Browser["Browser (iPad Safari)"]
+    Router["BrowserRouter"]
+    Entry["EntryPage<br/>3 jump cards"]
+    Lesson["Lesson<br/>useReducer + scripted phases"]
+    Tutorial["Tutorial<br/>6 centered slides"]
+    Boxy["BoxyPage<br/>Zustand store"]
+    Trade["Game<br/>XState v5"]
   end
-  subgraph Pure["Pure logic — no IO"]
-    Machine["game/machine.ts<br/>XState v5"]
-    Validate["game/validate.ts<br/>evaluateTrade + cheapest"]
-    Frac["game/fraction.ts<br/>exact rational math"]
-    Curr["game/curriculum.ts<br/>vendors + customers"]
+  subgraph Pure["Pure logic (no IO)"]
+    LessonScript["lesson/script.ts<br/>11 phases"]
+    BoxyDomain["boxy/domain<br/>Fraction · Polyomino · Grid · Rule · Generator"]
+    BoxyStore["boxy/store/gameStore<br/>placement + miss + snap"]
+    TradeMachine["game/machine.ts"]
+    TradeValidate["game/validate.ts"]
+    Curriculum["game/curriculum.ts"]
   end
-  subgraph Edge["Render Node Web Service"]
-    API["server/index.mjs<br/>POST /api/validate (scores 1-5)"]
-    Claude["Claude Haiku 4.5"]
+  subgraph Server["Node web service"]
+    Express["server/index.mjs"]
+    Validate["/api/validate"]
+    Healthz["/healthz"]
+    SPA["dist/ → SPA fallback"]
   end
-  UI --> DnD
-  UI -->|events| Machine
-  Machine -->|entry| Validate
-  Validate --> Frac
-  Validate --> Curr
-  UI --> Art
-  UI --> Sound
-  UI -.->|explanation text| API
-  API -.->|rubric prompt| Claude
-  Claude -.->|{score: 1-5}| API
-  API -.->|integer score| UI
-  classDef edge fill:#152340,stroke:#3ad9a6,color:#f2efe6
-  classDef browser fill:#1f2f55,stroke:#f5c542,color:#f2efe6
-  class Machine,Validate,Frac,Curr edge
-  class UI,DnD,Sound,Art browser
-</pre>
-  </div>
-  <p class="mt-4 text-sm" style="color: var(--text-muted)">The kid sees only the browser column. Pure-logic modules have no IO, which makes them unit-testable and replay-debuggable. The Render Node service call is the only network round-trip, and the kid never sees its prose.</p>
-</section>
-
-<!-- Components -->
-<section id="components" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">COMPONENTS</h2>
-  <div class="grid md:grid-cols-2 gap-4">
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">XState v5 machine</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">Single source of truth for game state.</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">replay-debuggable, exhaustive guards, UI is pure render</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">extra dep for a small game, learning curve</span></div>
-      </div>
-    </div>
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">Exact Fraction module</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">Integer numerator + denominator, GCD-normalized, never floats.</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">1/3 + 1/3 + 1/3 is exactly 1, no false-fail bugs</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">2x code to wrap raw numbers; loud error on misuse</span></div>
-      </div>
-    </div>
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">@dnd-kit/core touch drag</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">TouchSensor with 80ms delay, 8px activation distance.</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">iPad Safari first-class, no HTML5 drag quirks</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">slight learning curve over native DnD API</span></div>
-      </div>
-    </div>
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">Render Node + Claude Haiku</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">Express /api/validate scores explanation 1-5, frontend maps to scripted line.</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">real AI judgment, zero LLM text to kid, &lt;$0.0003/session</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">requires env var; offline falls back to keyword scorer</span></div>
-      </div>
-    </div>
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">SVG vendor art</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">5 animals drawn in code, shared style system (4px stroke, same eye glyph).</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">consistent silhouettes, zero asset weight, MOG animation works on any vendor</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">flat-vector look ceiling; can't compete with Pixar polish</span></div>
-      </div>
-    </div>
-
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-1">Hand-tuned curriculum</h3>
-      <p class="text-sm mb-3" style="color: var(--text-muted)">6 customers, each maps to one atom from the knowledge tree.</p>
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div class="pros">Pros<br/><span style="color: var(--text-muted)">every round teaches something specific, exact minimumCost</span></div>
-        <div class="cons">Cons<br/><span style="color: var(--text-muted)">no replay value, scaling content needs procedural gen</span></div>
-      </div>
+  subgraph Anthropic["Anthropic"]
+    Haiku["claude-haiku-4-5<br/>silent rubric scorer"]
+  end
+  Router --> Entry
+  Router --> Lesson
+  Router --> Tutorial
+  Router --> Boxy
+  Router --> Trade
+  Lesson --> LessonScript
+  Boxy --> BoxyStore
+  BoxyStore --> BoxyDomain
+  Trade --> TradeMachine
+  TradeMachine --> TradeValidate
+  TradeValidate --> Curriculum
+  Trade -- "POST {explanation}" --> Validate
+  Validate -- "x-api-key" --> Haiku
+  Haiku -- "{score: 1-5}" --> Validate
+  Validate -- "{score}" --> Trade
+  Express --> Validate
+  Express --> Healthz
+  Express --> SPA
+  Router -. "served by" .-> SPA
     </div>
   </div>
 </section>
 
-<!-- Data flow -->
-<section id="dataflow" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">DATA FLOW — ONE SUCCESSFUL TRADE</h2>
-  <div class="panel rounded-2xl p-6">
-<pre class="mermaid">
+<section id="routes" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-6">Routes</h2>
+  <div class="panel p-1">
+    <table>
+      <thead>
+        <tr><th>Path</th><th>Component</th><th>What it is</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/</code></td><td>EntryPage</td><td>Splash + three jump cards (Tutorial, Boxy, Trade Mogging) plus a primary "Take the lesson" CTA.</td></tr>
+        <tr><td><code>/lesson</code></td><td>Lesson</td><td>11-phase scripted lesson: parts of a whole → halves → quarters → naming → fraction notation → equivalence → bridge to Tutorial → bridge to Trade Mogging.</td></tr>
+        <tr><td><code>/tutorial</code></td><td>Tutorial</td><td>6 full-page centered slides explaining Boxy: fill the grid, count badge, edge colors, color contract, misses, reset vs new round.</td></tr>
+        <tr><td><code>/boxy</code></td><td>BoxyPage</td><td>Polyomino placement game. Strict per-edge color contract, snap-to-legal drop, miss counter. Reset + New round + Submit + Reveal.</td></tr>
+        <tr><td><code>/trade</code></td><td>Game</td><td>Trade Mogging bazaar. XState state machine, LLM-scored "explain what went wrong" lesson on miss. One customer at a time.</td></tr>
+        <tr><td><code>*</code></td><td>Navigate "/"</td><td>Any unknown path redirects to the entry. The router is the single source of truth.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-4 text-sm" style="color: var(--muted);"><code>SiteNav</code> is sticky on every route except <code>/</code> — the splash reads clean without chrome.</p>
+</section>
+
+<section id="layers" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-6">Layered model</h2>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="panel p-5">
+      <div class="chip chip-accent mb-3">Domain</div>
+      <h3 class="text-xl font-semibold mb-2">Pure value objects</h3>
+      <p style="color: var(--muted);" class="text-sm leading-relaxed"><code>Fraction</code>, <code>Polyomino</code>, <code>Grid</code>, <code>Piece</code>, <code>Rule</code> in Boxy; <code>Fraction</code>, <code>Vendor</code>, <code>Customer</code>, <code>TrayPiece</code> in Trade. Every invariant lives here. The domain throws clear exceptions on misuse so a UI bug surfaces with a stack trace that names the offending call site.</p>
+    </div>
+    <div class="panel p-5">
+      <div class="chip chip-green mb-3">State</div>
+      <h3 class="text-xl font-semibold mb-2">Observable container</h3>
+      <p style="color: var(--muted);" class="text-sm leading-relaxed">Boxy uses Zustand (cheap, no provider, selector-based). Trade uses XState v5 (8 screen states with event guards). Lesson uses a 30-line <code>useReducer</code>. The libraries do not cross-pollinate — each game owns its store behind its own route.</p>
+    </div>
+    <div class="panel p-5">
+      <div class="chip chip-purple mb-3">UI</div>
+      <h3 class="text-xl font-semibold mb-2">Dumb renderers</h3>
+      <p style="color: var(--muted);" class="text-sm leading-relaxed">React components subscribe to slices of state. They render and dispatch, nothing else. No data fetching for any client-only flow. The only server endpoint is <code>/api/validate</code>, called once per missed Trade Mogging serve.</p>
+    </div>
+  </div>
+</section>
+
+<section id="state" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">Three games, three state libraries</h2>
+  <p class="mb-6" style="color: var(--muted);">Each game's state shape made a different library the right tool. The pluralism is intentional. Each lives behind its own route; the libraries do not interact.</p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="chip chip-accent">Lesson</div>
+        <code style="color: var(--accent);">useReducer</code>
+      </div>
+      <p class="text-sm leading-relaxed mb-3" style="color: var(--muted);">11 phases, each with a small bag of UI state (split count, fill count, chat-done flag, remediation string). 5 action types cover it.</p>
+      <div class="pros-cons-grid">
+        <div>
+          <div class="text-xs uppercase tracking-wider pro mb-1">Pros</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>30 lines, zero dependencies</li>
+            <li>Co-located with the component</li>
+            <li>TypeScript checks each action shape</li>
+          </ul>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider con mb-1">Cons</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>Reducer grows with each new advance kind</li>
+            <li>Manual rerender management for chat cadence</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="chip chip-green">Boxy</div>
+        <code style="color: var(--green);">Zustand</code>
+      </div>
+      <p class="text-sm leading-relaxed mb-3" style="color: var(--muted);">Round, grid, tray, messages, terminal-state flags, miss counter, max-possible-fill ceiling. Many components subscribe to small slices.</p>
+      <div class="pros-cons-grid">
+        <div>
+          <div class="text-xs uppercase tracking-wider pro mb-1">Pros</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>No Provider boilerplate</li>
+            <li>Cheap selector subscriptions</li>
+            <li>setState fits the immutable-update flow</li>
+          </ul>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider con mb-1">Cons</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>Selector allocation is a footgun (React error #185)</li>
+            <li>No native event-graph support</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="chip chip-purple">Trade</div>
+        <code style="color: var(--purple);">XState v5</code>
+      </div>
+      <p class="text-sm leading-relaxed mb-3" style="color: var(--muted);">8 discrete screen states connected by event guards (<code>isMog</code>, <code>isProfit</code>, <code>hasMoreCustomers</code>).</p>
+      <div class="pros-cons-grid">
+        <div>
+          <div class="text-xs uppercase tracking-wider pro mb-1">Pros</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>State chart visualizable</li>
+            <li>Guards prevent illegal transitions at the source</li>
+            <li>Pure context, no side-effects until needed</li>
+          </ul>
+        </div>
+        <div>
+          <div class="text-xs uppercase tracking-wider con mb-1">Cons</div>
+          <ul class="text-xs space-y-1" style="color: var(--muted);">
+            <li>Heavier learning curve than useReducer</li>
+            <li>v5 API differs from older XState docs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="boxy" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">Boxy placement contract</h2>
+  <p class="mb-6" style="color: var(--muted);">Snap-to-legal drop + strict per-edge color match. The flow tries every local cell of the piece as the hot-spot, scores each by piece-centroid-to-drop-cell distance, and picks the best legal candidate. Rejections rank from rule-mismatch through bounds-check.</p>
+  <div class="panel p-3">
+    <div class="mermaid">
+flowchart LR
+  Drop["Drop event<br/>(dropCell, pieceId)"] --> Snap{For each local cell<br/>of the piece}
+  Snap --> Origin["origin = dropCell − localCell"]
+  Origin --> Bounds{All cells<br/>in bounds &<br/>empty?}
+  Bounds -- no --> Fail1["fail: out_of_bounds<br/>or overlap"]
+  Bounds -- yes --> Edges{For each<br/>cell-edge with<br/>a neighbor}
+  Edges --> EdgeCheck{newColor /<br/>neighborColor}
+  EdgeCheck -- "both blank" --> Edges
+  EdgeCheck -- "one blank,<br/>one colored" --> Fail2["fail: color_mismatch"]
+  EdgeCheck -- "different colors" --> Fail2
+  EdgeCheck -- "same color" --> RuleCheck{rule satisfied<br/>by both<br/>orderings?}
+  RuleCheck -- no --> Fail3["fail: rule_mismatch"]
+  RuleCheck -- yes --> Edges
+  Edges -- "all edges OK" --> Touched{at least<br/>one neighbor<br/>touched?}
+  Touched -- no, grid empty --> Place["ok: place piece"]
+  Touched -- yes --> Place
+  Snap --> Centroid["score by<br/>(piece centroid −<br/>drop cell)²"]
+  Place --> Centroid
+  Centroid --> Best["best legal origin wins"]
+  Fail1 --> Rank
+  Fail2 --> Rank
+  Fail3 --> Rank
+  Rank["rank fails:<br/>rule > color > overlap ><br/>adjacency > bounds"] --> Surface["surface the<br/>most-useful reason"]
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="panel p-5">
+      <div class="chip chip-accent mb-2">Snap-to-legal</div>
+      <p class="text-sm" style="color: var(--muted);">The drop cell is the cell under the pointer, not the piece's (0,0). Trying every local cell as the hot-spot eliminates the false "out of bounds" / "spot taken" errors that fired when the visual drop was on a valid cell but the top-left corner landed off-grid.</p>
+    </div>
+    <div class="panel p-5">
+      <div class="chip chip-green mb-2">Strict edge contract</div>
+      <p class="text-sm" style="color: var(--muted);">Each cell-edge between new piece and neighbor: both blank → ok; one blank, one colored → reject; different colors → reject; same color → that color's specific rule must hold for the count ratio (equivalents like 6:10 ≡ 3:5 count).</p>
+    </div>
+    <div class="panel p-5">
+      <div class="chip chip-purple mb-2">Miss counter</div>
+      <p class="text-sm" style="color: var(--muted);">Every rejection bumps <code>missCount</code>. The toolbar's stat chip stays gray at 0 and tints honey above zero. Soft pressure against drag-and-pray, not punishment. Resets on Reset and New round.</p>
+    </div>
+  </div>
+</section>
+
+<section id="trade" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">Trade Mogging state machine</h2>
+  <p class="mb-6" style="color: var(--muted);">8 discrete screen states. The machine is the only thing that mutates Trade Mogging state. UI components are pure renders of the snapshot.</p>
+  <div class="panel p-3">
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> intro
+  intro --> shopping: START
+  shopping --> shopping: DROP_PIECE / REMOVE_PIECE / CLEAR_TRAY
+  shopping --> resolving: SUBMIT
+  resolving --> mogSplash: isMog
+  resolving --> profitOk: isProfit
+  resolving --> lesson: isWrong
+  mogSplash --> advancing: ADVANCE [hasMore]
+  mogSplash --> complete: ADVANCE
+  profitOk --> advancing: ADVANCE [hasMore]
+  profitOk --> complete: ADVANCE
+  lesson --> shopping: CLEAR_TRAY (retry same customer)
+  lesson --> advancing: ADVANCE [hasMore]
+  lesson --> complete: ADVANCE
+  advancing --> shopping
+  complete --> intro: RESTART
+    </div>
+  </div>
+</section>
+
+<section id="flow" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">Data flow on a missed Trade Mogging serve</h2>
+  <p class="mb-6" style="color: var(--muted);">The kid never sees the LLM's prose. The frontend maps the integer 1-5 score to one of five pre-written scripted responses. The LLM's pedagogical judgment is used; its writing is not.</p>
+  <div class="panel p-3">
+    <div class="mermaid">
 sequenceDiagram
   participant Kid
-  participant Stall as Vendor stall
-  participant Game
-  participant FSM as XState
-  participant Val as Validator
-  participant Snd as Sound
-  Kid->>Stall: touch + drag piece
-  Stall->>Game: DragEnd over assembly-tray
-  Game->>FSM: DROP_PIECE
-  FSM-->>Game: tray updated
-  Game->>Snd: playPieceDrop (thock)
-  Kid->>Game: tap SERVE
-  Game->>FSM: SUBMIT
-  FSM->>Val: evaluateTrade(customer, tray)
-  Val-->>FSM: kind=mog, profit, bonus
-  FSM-->>Game: state=mogSplash, cash += profit+bonus
-  Game->>Snd: playMogSting (brass triad)
-  Game-->>Kid: MogSplash (capybara on vendor's head)
-  Kid->>Game: tap "next customer"
-  Game->>FSM: ADVANCE
-  FSM-->>Game: tray=[], next customer
-</pre>
-  </div>
-</section>
-
-<!-- AI validation -->
-<section id="ai-validation" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">AI VALIDATION — JUDGMENT, NOT PROSE</h2>
-  <div class="panel rounded-2xl p-6 mb-4">
-<pre class="mermaid">
-flowchart LR
-  Kid["Kid types<br/>'i forgot 6/8 = 3/4'"]
-  Client[Frontend]
-  API["/api/validate<br/>Render Node service"]
-  Claude["Claude Haiku 4.5<br/>1-5 rubric prompt"]
-  Map[Score → scripted line]
-  Out["Kid reads:<br/>'Exactly right.'"]
-  Kid --> Client
-  Client -->|POST| API
-  API -->|system prompt| Claude
-  Claude -->|"{score: 5}"| API
-  API -->|integer 5| Client
-  Client --> Map
-  Map --> Out
-  style Claude fill:#152340,stroke:#3ad9a6,color:#f2efe6
-  style Map fill:#1f2f55,stroke:#f5c542,color:#f2efe6
-</pre>
-  </div>
-  <div class="grid md:grid-cols-2 gap-4 text-sm">
-    <div class="panel-stall rounded-2xl p-4">
-      <div class="display-font text-xl accent-mint mb-2">What the kid sees</div>
-      <ul class="space-y-1" style="color: var(--text-muted)">
-        <li>5 → "Exactly right. You said the key idea."</li>
-        <li>4 → "Yes, that is the right shape. Lock it in."</li>
-        <li>3 → "Close. You named part of it..."</li>
-        <li>2 → "Not quite. The rule..."</li>
-        <li>1 → "Take another look..."</li>
-      </ul>
-    </div>
-    <div class="panel-stall rounded-2xl p-4">
-      <div class="display-font text-xl accent-red mb-2">What the kid never sees</div>
-      <ul class="space-y-1" style="color: var(--text-muted)">
-        <li>Any prose from Claude</li>
-        <li>Any hallucinated example</li>
-        <li>Any tone drift from a 9-year-old's reading level</li>
-        <li>Any prompt-injected response</li>
-        <li>Any rubric explanation text</li>
-      </ul>
+  participant Tray as AssemblyTray
+  participant Machine as XState
+  participant Lesson as LessonPanel
+  participant Server as Express /api/validate
+  participant Haiku as Anthropic Claude Haiku
+  Kid->>Tray: build wrong combination → tap SERVE
+  Tray->>Machine: SUBMIT
+  Machine-->>Lesson: state = lesson, outcome = wrong-amount
+  Lesson-->>Kid: side-by-side wedges + textarea<br/>"explain what went wrong"
+  Kid->>Lesson: types one sentence
+  Lesson->>Server: POST { explanation, target, submitted, food }
+  Server->>Haiku: messages.create(claude-haiku-4-5, scorer rubric)
+  Haiku-->>Server: {"score": 4}
+  Server-->>Lesson: { score: 4 }
+  Lesson-->>Kid: scripted line mapped from score
+  Note over Server,Haiku: If API key missing<br/>or call fails, the client<br/>falls back to keyword scoring.
+  Kid->>Lesson: tap "try again" → CLEAR_TRAY
     </div>
   </div>
 </section>
 
-<!-- Decisions -->
-<section id="decisions" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">DECISIONS</h2>
-  <div class="panel rounded-2xl overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-bazaar-stall" style="background: var(--bazaar-stall);">
-        <tr class="text-left">
-          <th class="p-3 accent">Decision</th>
-          <th class="p-3 accent">What I chose</th>
-          <th class="p-3 accent">Alternative</th>
-          <th class="p-3 accent">Why</th>
-        </tr>
+<section id="decisions" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-6">Decisions</h2>
+  <div class="panel p-1">
+    <table>
+      <thead>
+        <tr><th style="width: 19%">Decision</th><th style="width: 25%">What we chose</th><th style="width: 22%">Alternative</th><th>Why</th></tr>
       </thead>
-      <tbody style="color: var(--text-muted);">
-        <tr class="border-t border-bazaar-edge" style="border-color: var(--bazaar-edge);">
-          <td class="p-3 text-text-primary" style="color: var(--text-primary);">Tutor voice</td>
-          <td class="p-3">Scripted lines</td>
-          <td class="p-3">Streaming LLM</td>
-          <td class="p-3">Synthesis's own product avoids raw LLMs; 7 failure modes evaporate</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">AI role</td>
-          <td class="p-3">Silent rubric scorer</td>
-          <td class="p-3">Visible tutor chat</td>
-          <td class="p-3">Use AI's judgment, not prose; kid sees scripted line per score</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">Math layer</td>
-          <td class="p-3">Integer Fraction type</td>
-          <td class="p-3">JS numbers</td>
-          <td class="p-3">1/3 + 1/3 + 1/3 must equal 1, not 0.999. Class trust survives.</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">State</td>
-          <td class="p-3">XState v5</td>
-          <td class="p-3">useReducer</td>
-          <td class="p-3">Replay-debuggable, exhaustive guards, UI never mutates</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">Drag layer</td>
-          <td class="p-3">@dnd-kit/core</td>
-          <td class="p-3">HTML5 DnD API</td>
-          <td class="p-3">HTML5 DnD does not work on iPad Safari touch</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">Art</td>
-          <td class="p-3">SVG in code</td>
-          <td class="p-3">AI-generated PNG</td>
-          <td class="p-3">Consistent silhouettes, zero asset weight, MOG animation works on any vendor</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">Curriculum</td>
-          <td class="p-3">Hand-tuned 6 customers</td>
-          <td class="p-3">Procedural gen</td>
-          <td class="p-3">Each round teaches a specific atom; exact minimumCost</td>
-        </tr>
-        <tr class="border-t" style="border-color: var(--bazaar-edge);">
-          <td class="p-3" style="color: var(--text-primary);">Persistence</td>
-          <td class="p-3">None</td>
-          <td class="p-3">localStorage progress</td>
-          <td class="p-3">Off-ramp principle: the lesson ends</td>
-        </tr>
+      <tbody>
+        <tr><td>Unified vs separate apps</td><td>One Render service, four routes</td><td>Three separate deploys cross-linked</td><td>One URL for evaluators, one deploy to manage, one set of dependencies. BrowserRouter + SPA fallback in Express gives deep-links without a CDN-router product.</td></tr>
+        <tr><td>Math representation</td><td>Integer rational <code>{num, den}</code></td><td>JS <code>number</code></td><td>A kid combining 1/3 + 1/3 + 1/3 must yield exactly 1, never 0.9999. Float drift would fire wrong-amount on a correct answer.</td></tr>
+        <tr><td>State — Boxy</td><td>Zustand</td><td>useReducer, XState</td><td>Many small slice subscribers, no event-graph complexity. Zustand's selector model fits exactly.</td></tr>
+        <tr><td>State — Trade</td><td>XState v5</td><td>useReducer</td><td>8 distinct screen states with event guards. A state chart is the right tool; rolling this with reducers would re-invent guarded transitions badly.</td></tr>
+        <tr><td>State — Lesson</td><td>useReducer</td><td>Zustand, XState</td><td>30 lines of state, 5 action types. Adding a library would be over-engineering.</td></tr>
+        <tr><td>Boxy edge contract</td><td>Strict same-color match + per-color rule</td><td>Any rule that fits the count ratio</td><td>Field reports: 4-piece accepted next to 6-piece on a 1:3 edge because 4:6 reduces to 2:3. Strict per-edge match makes the math the actual gate.</td></tr>
+        <tr><td>Drag hot-spot</td><td>Snap-to-legal origin (centroid heuristic)</td><td>Drop = piece (0,0)</td><td>Players were dropping the visual center of a multi-cell piece and getting "out of bounds" because (0,0) landed off-grid.</td></tr>
+        <tr><td>Tray colors</td><td>Hidden when idle, revealed on drag</td><td>Always visible</td><td>Static tray stays unbiased (no shape-and-color scanning). Active drag is informative under the strict edge contract.</td></tr>
+        <tr><td>Tutor — Lesson</td><td>Scripted, no LLM</td><td>LLM-generated</td><td>Engelmann Direct Instruction demands faultless examples and unambiguous progress. The lesson IS the teacher.</td></tr>
+        <tr><td>Tutor — Trade</td><td>Silent LLM scorer + 5 pre-written replies</td><td>LLM prose to the kid</td><td>Synthesis brief: LLM text never exposed directly. The LLM's pedagogical judgment is used; its prose is not.</td></tr>
+        <tr><td>Drag/drop library</td><td>@dnd-kit for Trade, Framer Motion for Boxy</td><td>One library</td><td>Trade uses @dnd-kit because it landed first; Boxy uses Framer because <code>dragSnapToOrigin</code> ships built-in. Pluralism cost is one extra dependency.</td></tr>
+        <tr><td>Deploy</td><td>Render Node Web Service</td><td>Vercel, Netlify, Cloudflare Pages</td><td>Server-side API key for /api/validate rules out static-only platforms. Render Pro avoids cold-start on the demo URL.</td></tr>
+        <tr><td>Routing</td><td>react-router-dom@7 BrowserRouter</td><td>HashRouter, file-based router</td><td>BrowserRouter + Express SPA fallback gives clean URLs without a per-route SSR bundle. Deep links work after refresh.</td></tr>
       </tbody>
     </table>
   </div>
 </section>
 
-<!-- Trade-offs -->
-<section id="tradeoffs" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">TRADE-OFFS</h2>
-  <div class="grid md:grid-cols-2 gap-4">
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">Flat SVG art ceiling</h3>
-      <p class="text-sm mb-3">Capybara and vendors are flat vector, not raster art.</p>
-      <div class="text-sm pros mb-2">Why I accept it: silhouettes stay consistent automatically; the MOG animation works on any vendor via transform; zero asset weight; version-controlled.</div>
-      <div class="text-sm cons">When it would bite: if a hiring partner wants Pixar-polish for marketing screenshots, we'd need an art swap or a separate marketing-page render.</div>
+<section id="tradeoffs" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-6">Trade-offs we accepted</h2>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">Three state libraries inside one app</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">Zustand for Boxy, XState for Trade, useReducer for Lesson. Pluralism is intentional — each library fits its game's state shape — but onboarding takes longer.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">Each game lives behind its own route; the libraries do not cross-pollinate.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">A new contributor has to learn three idioms before they can move across the codebase.</p>
+      </div>
     </div>
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">Hand-tuned curriculum</h3>
-      <p class="text-sm mb-3">Six fixed customers, each authored against one atom.</p>
-      <div class="text-sm pros mb-2">Why I accept it: every round teaches something specific; minimumCost is exact, not approximate.</div>
-      <div class="text-sm cons">When it would bite: kid wants to play again tomorrow — same six customers. v1.1 adds procedural generation with a unit-test gate.</div>
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">Boxy tests live in a separate repo</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">The standalone <code>boxy-fractions</code> repo has a Vitest suite. Porting Vitest into this repo is a follow-up.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">The domain layer is identical and the source-of-truth tests still gate that repo.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">A regression in this repo's port would not be caught by its own CI until the test suite ports too.</p>
+      </div>
     </div>
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">Single-IP rate limit, in-memory</h3>
-      <p class="text-sm mb-3">/api/validate caps at 60/minute per IP using a Map.</p>
-      <div class="text-sm pros mb-2">Why I accept it: enough for any demo session; no external dep.</div>
-      <div class="text-sm cons">When it would bite: real classroom of 30 kids on one school NAT would share the limit. v1.1 swap to Upstash Redis.</div>
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">No persistence</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">A kid who closes the tab and comes back starts fresh.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">Off-ramp principle (Skinner): a paused lesson is a finished lesson.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">A parent who wants "save progress" needs a v1.1 with its own auth and design implications.</p>
+      </div>
     </div>
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">No persistence between sessions</h3>
-      <p class="text-sm mb-3">Cash resets, atom mastery is not tracked.</p>
-      <div class="text-sm pros mb-2">Why I accept it: deliberate per Skinner's off-ramp principle. The kid leaves the screen.</div>
-      <div class="text-sm cons">When it would bite: parent wants progress reports. Phase 3 native app would add opt-in family digest.</div>
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">Anthropic API key gates Trade rubric</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">If the key is unset, the lesson degrades to keyword fallback.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">Three-tier defense (strict JSON → regex → loose digit) plus keyword fallback means the game never breaks; the rubric just gets coarser.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">A missing key on production is invisible until a kid hits the lesson panel; <code>/healthz</code> reports it.</p>
+      </div>
+    </div>
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">Character art is placeholder-grade</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">Hand-drawn SVG carries the bazaar's design rules but was called out by the user as needing polish.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">No external assets, deterministic, no licensing — the gameplay flow ships first.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">Cowork MCP registry has no text-to-image generator; richer art needs a Replicate / Fal.ai / DALL-E MCP installed at the Claude Desktop level.</p>
+      </div>
+    </div>
+    <div class="panel p-5">
+      <h3 class="text-lg font-semibold mb-2">Lesson bar is tap-only</h3>
+      <p class="text-sm mb-3" style="color: var(--muted);">A drag-drop bar would feel more tactile but doubles the implementation surface.</p>
+      <div class="text-xs">
+        <div class="pro mb-1">Why I accept it</div>
+        <p style="color: var(--muted);">Tap-to-split + tap-to-deposit covers the pedagogy with one event type and one accessibility story.</p>
+        <div class="con mt-3 mb-1">When it would bite</div>
+        <p style="color: var(--muted);">Re-evaluate on iPad after first cohort tests if kids ask for "drag the pieces in."</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Cost -->
-<section id="cost" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">COST</h2>
-  <div class="grid md:grid-cols-2 gap-4">
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">Per-session AI spend</h3>
-      <canvas id="costChart" style="max-height: 280px;"></canvas>
+<section id="cost" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-2">Cost model</h2>
+  <p class="mb-6" style="color: var(--muted);">Only Trade Mogging incurs per-request cost (one Claude Haiku call per missed serve). The lesson, tutorial, and Boxy run entirely client-side. Render Starter plan covers always-on at flat $7/mo.</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="panel p-5">
+      <h3 class="text-base font-semibold mb-3">Per-request cost by route</h3>
+      <div style="background: rgba(15, 20, 36, 0.5); border-radius: 0.5rem; padding: 0.75rem;">
+        <canvas id="perRouteCost" height="180"></canvas>
+      </div>
+      <p class="text-xs mt-3" style="color: var(--muted);">Claude Haiku 4.5 priced at $1/M input + $5/M output tokens (May 2026 list). System prompt + user message ≈ 250 input tokens; reply ≈ 12 output tokens. ≈ $0.0003 per missed serve.</p>
     </div>
-    <div class="panel rounded-2xl p-5">
-      <h3 class="display-font text-xl accent mb-2">Scale projection</h3>
-      <canvas id="scaleChart" style="max-height: 280px;"></canvas>
+    <div class="panel p-5">
+      <h3 class="text-base font-semibold mb-3">Monthly cost at scale</h3>
+      <div style="background: rgba(15, 20, 36, 0.5); border-radius: 0.5rem; padding: 0.75rem;">
+        <canvas id="scaleCost" height="180"></canvas>
+      </div>
+      <p class="text-xs mt-3" style="color: var(--muted);">Assumes ~3 missed serves per kid per session, one session per kid per day. Log-axis. Render + Anthropic combined.</p>
     </div>
-  </div>
-  <p class="mt-4 text-sm" style="color: var(--text-muted)">Cost is dominated by Claude Haiku calls in `/api/validate`. A session is 6 customers with an average of 1.4 failed trades requiring a lesson + explanation submission. Each call sends ~150 input tokens and asks for ≤32 output tokens. At Haiku 4.5 list pricing this is roughly $0.0003 per session.</p>
-</section>
-
-<!-- Stack -->
-<section id="stack" class="px-6 py-10 max-w-5xl mx-auto">
-  <h2 class="display-font text-4xl accent mb-6">STACK</h2>
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Vite</div><div class="text-xs" style="color: var(--text-muted)">build</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">React 19</div><div class="text-xs" style="color: var(--text-muted)">UI</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">TypeScript</div><div class="text-xs" style="color: var(--text-muted)">types</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Tailwind</div><div class="text-xs" style="color: var(--text-muted)">styles</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">XState v5</div><div class="text-xs" style="color: var(--text-muted)">state machine</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">@dnd-kit</div><div class="text-xs" style="color: var(--text-muted)">touch drag</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Framer Motion</div><div class="text-xs" style="color: var(--text-muted)">animation</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Tone.js</div><div class="text-xs" style="color: var(--text-muted)">audio</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Render</div><div class="text-xs" style="color: var(--text-muted)">Node web service</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">Claude Haiku</div><div class="text-xs" style="color: var(--text-muted)">rubric scorer</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">SVG</div><div class="text-xs" style="color: var(--text-muted)">vendor art</div></div>
-    <div class="panel rounded-2xl p-4"><div class="display-font text-xl accent">iPad Safari</div><div class="text-xs" style="color: var(--text-muted)">target</div></div>
   </div>
 </section>
 
-<footer class="px-6 py-8 max-w-5xl mx-auto text-sm border-t mt-12" style="border-color: var(--bazaar-edge); color: var(--text-muted);">
-  <div class="flex flex-wrap justify-between gap-4">
-    <span>Trade Mogging — Gauntlet G5 Week 4 — Superbuilders submission</span>
-    <span><a href="https://trade-mogging.onrender.com" target="_blank">Play live</a> · <a href="https://github.com/scott-lydon/clone-synthesis-tutor" target="_blank">GitHub repo</a> · <a href="https://patskinner.substack.com/p/the-ultimate-balance-cognitive-load" target="_blank">Skinner framework</a> · <a href="https://www.synthesis.com/tutor" target="_blank">Synthesis Tutor</a></span>
+<section id="stack" class="max-w-6xl mx-auto px-6 py-10">
+  <h2 class="text-3xl font-bold tracking-tight mb-6">Tech stack</h2>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Build</div><div class="font-semibold">Vite 8</div><div class="text-xs" style="color: var(--muted);">React 19 + TypeScript</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Styles</div><div class="font-semibold">Tailwind 3</div><div class="text-xs" style="color: var(--muted);">utilities only</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Routing</div><div class="font-semibold">react-router 7</div><div class="text-xs" style="color: var(--muted);">BrowserRouter</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Trade)</div><div class="font-semibold">XState 5</div><div class="text-xs" style="color: var(--muted);">@xstate/react</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">State (Boxy)</div><div class="font-semibold">Zustand 5</div><div class="text-xs" style="color: var(--muted);">selector-based</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Trade)</div><div class="font-semibold">@dnd-kit/core 6</div><div class="text-xs" style="color: var(--muted);">touch sensors</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Drag (Boxy)</div><div class="font-semibold">Framer Motion 12</div><div class="text-xs" style="color: var(--muted);">dragSnapToOrigin</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Sound (Trade)</div><div class="font-semibold">Tone.js 15</div><div class="text-xs" style="color: var(--muted);">PolySynth / MonoSynth</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Server</div><div class="font-semibold">Express 4</div><div class="text-xs" style="color: var(--muted);">Node 20</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Deploy</div><div class="font-semibold">Render</div><div class="text-xs" style="color: var(--muted);">Node web service, Pro</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">LLM</div><div class="font-semibold">Claude Haiku 4.5</div><div class="text-xs" style="color: var(--muted);">silent rubric scorer</div></div>
+    <div class="panel-inner p-4"><div class="text-xs uppercase tracking-wider mb-1" style="color: var(--muted);">Lint</div><div class="font-semibold">ESLint 10</div><div class="text-xs" style="color: var(--muted);">typescript-eslint</div></div>
+  </div>
+</section>
+
+<footer class="max-w-6xl mx-auto px-6 py-12 text-center">
+  <div class="panel-inner p-6 inline-block">
+    <div class="text-sm font-semibold mb-2" style="color: var(--text);">Repositories</div>
+    <div class="flex flex-wrap justify-center gap-3 text-sm">
+      <a href="https://github.com/scott-lydon/clone-synthesis-tutor" target="_blank" class="nav-pill">GitHub: clone-synthesis-tutor</a>
+      <a href="https://labs.gauntletai.com/scottlydon/clone-synthesis-tutor" target="_blank" class="nav-pill">GitLab: clone-synthesis-tutor</a>
+      <a href="https://github.com/scott-lydon/boxy-fractions" target="_blank" class="nav-pill">GitHub: boxy-fractions</a>
+    </div>
+    <div class="mt-4 text-xs" style="color: var(--muted);">Live: <a href="https://trade-mogging-v7ua.onrender.com/" target="_blank" style="color: var(--accent);">trade-mogging-v7ua.onrender.com</a></div>
   </div>
 </footer>
 
 <script>
-  // Cost chart — per-agent (here per-component) cost contribution per session
-  const costCtx = document.getElementById('costChart');
-  new Chart(costCtx, {
+  const ctx1 = document.getElementById('perRouteCost').getContext('2d');
+  new Chart(ctx1, {
     type: 'bar',
     data: {
-      labels: ['/api/validate (Haiku)', 'Render Node service', 'Static hosting', 'SVG art', 'Audio'],
+      labels: ['/', '/lesson', '/tutorial', '/boxy', '/trade (per miss)'],
       datasets: [{
-        label: 'Cents per session',
-        data: [0.03, 0.005, 0.001, 0, 0],
-        backgroundColor: ['#f5c542', '#3ad9a6', '#a8b3cf', '#a8b3cf', '#a8b3cf'],
-      }]
+        label: 'USD per request',
+        data: [0, 0, 0, 0, 0.0003],
+        backgroundColor: ['#a8b3cf', '#a8c69f', '#e8a87c', '#a8c69f', '#b8a7c9'],
+        borderRadius: 6,
+      }],
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: '#f2efe6' } } },
+      plugins: { legend: { display: false } },
       scales: {
-        y: { ticks: { color: '#a8b3cf' }, grid: { color: '#2c3f6e' } },
-        x: { ticks: { color: '#a8b3cf' }, grid: { color: '#2c3f6e' } }
-      }
-    }
+        x: { ticks: { color: '#a8b3cf' }, grid: { color: 'rgba(212,200,178,0.05)' } },
+        y: {
+          ticks: { color: '#a8b3cf', callback: (v) => '$' + v.toFixed(4) },
+          grid: { color: 'rgba(212,200,178,0.05)' },
+        },
+      },
+    },
   });
-
-  // Scale projection — total cost across kids per month
-  const scaleCtx = document.getElementById('scaleChart');
-  new Chart(scaleCtx, {
+  const ctx2 = document.getElementById('scaleCost').getContext('2d');
+  const scales = [10, 100, 1000, 10000, 100000];
+  const renderCost = scales.map(() => 7);
+  const llmCost = scales.map((n) => n * 0.0009 * 30);
+  const total = scales.map((_, i) => renderCost[i] + llmCost[i]);
+  new Chart(ctx2, {
     type: 'line',
     data: {
-      labels: ['10 kids', '100 kids', '1k kids', '10k kids', '100k kids', '1M kids'],
-      datasets: [{
-        label: 'Monthly AI cost ($)',
-        data: [0.09, 0.9, 9, 90, 900, 9000],
-        borderColor: '#f5c542',
-        backgroundColor: 'rgba(245, 197, 66, 0.2)',
-        tension: 0.3,
-        fill: true,
-      }]
+      labels: scales.map((n) => n.toLocaleString() + ' kids/day'),
+      datasets: [
+        { label: 'Render', data: renderCost, borderColor: '#a8c69f', backgroundColor: 'rgba(168, 198, 159, 0.2)', borderWidth: 2, tension: 0.2 },
+        { label: 'LLM', data: llmCost, borderColor: '#b8a7c9', backgroundColor: 'rgba(184, 167, 201, 0.2)', borderWidth: 2, tension: 0.2 },
+        { label: 'Total', data: total, borderColor: '#e6c879', backgroundColor: 'rgba(230, 200, 121, 0.2)', borderWidth: 3, tension: 0.2 },
+      ],
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: '#f2efe6' } } },
+      plugins: { legend: { labels: { color: '#a8b3cf' } } },
       scales: {
-        y: { type: 'logarithmic', ticks: { color: '#a8b3cf' }, grid: { color: '#2c3f6e' } },
-        x: { ticks: { color: '#a8b3cf' }, grid: { color: '#2c3f6e' } }
-      }
-    }
+        x: { ticks: { color: '#a8b3cf' }, grid: { color: 'rgba(212,200,178,0.05)' } },
+        y: {
+          type: 'logarithmic',
+          ticks: { color: '#a8b3cf', callback: (v) => '$' + v.toLocaleString() },
+          grid: { color: 'rgba(212,200,178,0.05)' },
+        },
+      },
+    },
   });
 </script>
 

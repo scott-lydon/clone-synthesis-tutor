@@ -89,8 +89,13 @@ export const EntryPage: React.FC = () => (
       </Link>
     </div>
 
-    <footer className="mt-6 text-text-muted text-xs text-center max-w-md">
-      Best on iPad in Safari. Tap, drag, learn.
+    <footer className="mt-6 text-text-muted text-xs text-center max-w-md flex flex-col gap-1">
+      <div>Best on iPad in Safari. Tap, drag, learn.</div>
+      <div>
+        <a href="/architecture" className="underline hover:text-text-primary">
+          Architecture
+        </a>
+      </div>
     </footer>
   </div>
 );

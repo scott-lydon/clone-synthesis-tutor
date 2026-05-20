@@ -204,8 +204,18 @@ app.use(
   }),
 );
 
+/* ──────────────────────────  Architecture website  ────────────────────────── */
+// The architecture write-up lives in /website/index.html (single-file with
+// Mermaid + Chart.js + Tailwind from CDN). It is NOT part of the React SPA —
+// it's a static deliverable for evaluators. Serve it explicitly at
+// /architecture.html and /architecture (both paths convenient).
+const archHtml = path.resolve(__dirname, '..', 'website', 'index.html');
+app.get(['/architecture', '/architecture.html'], (_req, res) => {
+  res.sendFile(archHtml);
+});
+
 // SPA fallback: every non-api, non-asset route resolves to index.html so React Router
-// (none today, but future-proof) and refresh-mid-game don't 404.
+// works and refresh-mid-game does not 404.
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
   res.sendFile(path.join(distDir, 'index.html'));
