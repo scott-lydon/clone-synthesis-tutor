@@ -36,9 +36,12 @@ export const SiteNav: React.FC = () => {
       >
         ▸ HOME
       </Link>
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap justify-end">
         <NavLink to="/lesson" className={linkClass}>
           Lesson
+        </NavLink>
+        <NavLink to="/tutorial" className={linkClass}>
+          Tutorial
         </NavLink>
         <NavLink to="/boxy" className={linkClass}>
           Boxy

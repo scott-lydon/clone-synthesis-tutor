@@ -23,6 +23,7 @@ import { Game } from './components/Game';
 import { EntryPage } from './components/EntryPage';
 import { Lesson } from './components/Lesson';
 import { BoxyPage } from './components/BoxyPage';
+import { Tutorial } from './components/Tutorial';
 import { SiteNav } from './components/SiteNav';
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<EntryPage />} />
         <Route path="/lesson" element={<Lesson />} />
+        <Route path="/tutorial" element={<Tutorial />} />
         <Route path="/boxy" element={<BoxyPage />} />
         <Route path="/trade" element={<Game />} />
         {/* Any unknown path bounces back to the entry. The router is the

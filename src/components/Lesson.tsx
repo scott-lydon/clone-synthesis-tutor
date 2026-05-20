@@ -222,7 +222,7 @@ interface AdvanceProps {
   readonly chatDone: boolean;
   readonly onContinue: () => void;
   readonly onChoice: (correct: boolean, remediation?: string) => void;
-  readonly onJump: (route: '/boxy' | '/trade') => void;
+  readonly onJump: (route: '/boxy' | '/trade' | '/tutorial') => void;
 }
 
 const Advance: React.FC<AdvanceProps> = ({ phase, chatDone, onContinue, onChoice, onJump }) => {
@@ -257,21 +257,42 @@ const Advance: React.FC<AdvanceProps> = ({ phase, chatDone, onContinue, onChoice
         </button>
       );
     case 'jump-out': {
-      const isBoxy = advance.route === '/boxy';
+      // Each route has its own palette so the kid associates the button color
+      // with the destination they're about to land on. /tutorial routes to the
+      // dusty terracotta tutorial entrance, /boxy is sage, /trade is mauve.
+      const palette: Record<typeof advance.route, { bg: string; color: string; border: string; label: string }> = {
+        '/tutorial': {
+          bg: 'rgba(232, 168, 124, 0.18)',
+          color: '#e8c7b0',
+          border: 'rgba(232, 168, 124, 0.40)',
+          label: 'Open the tutorial →',
+        },
+        '/boxy': {
+          bg: 'rgba(168, 198, 159, 0.18)',
+          color: '#c9d8c0',
+          border: 'rgba(168, 198, 159, 0.40)',
+          label: 'Go to Boxy →',
+        },
+        '/trade': {
+          bg: 'rgba(184, 167, 201, 0.18)',
+          color: '#d4c7df',
+          border: 'rgba(184, 167, 201, 0.40)',
+          label: 'Go to Trade Mogging →',
+        },
+      };
+      const p = palette[advance.route];
       return (
         <button
           type="button"
           onClick={() => onJump(advance.route)}
           className="px-6 py-3 rounded-full font-display tracking-wider text-base active:scale-95"
           style={{
-            background: isBoxy ? 'rgba(168, 198, 159, 0.18)' : 'rgba(184, 167, 201, 0.18)',
-            color: isBoxy ? '#c9d8c0' : '#d4c7df',
-            boxShadow: isBoxy
-              ? 'inset 0 0 0 1px rgba(168, 198, 159, 0.40)'
-              : 'inset 0 0 0 1px rgba(184, 167, 201, 0.40)',
+            background: p.bg,
+            color: p.color,
+            boxShadow: `inset 0 0 0 1px ${p.border}`,
           }}
         >
-          {isBoxy ? 'Go to Boxy →' : 'Go to Trade Mogging →'}
+          {p.label}
         </button>
       );
     }

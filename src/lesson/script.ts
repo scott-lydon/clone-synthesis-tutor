@@ -75,7 +75,7 @@ export type Advance =
   | { readonly kind: 'split-twice' } // tap-split: kid must split at least twice
   | { readonly kind: 'choice'; readonly question: ChoiceQuestion }
   | { readonly kind: 'bar-filled' } // compare-bars: bottom bar reaches target
-  | { readonly kind: 'jump-out'; readonly route: '/boxy' | '/trade' };
+  | { readonly kind: 'jump-out'; readonly route: '/boxy' | '/trade' | '/tutorial' };
 
 export interface Phase {
   readonly id: string;
@@ -271,7 +271,7 @@ export const PHASES: readonly Phase[] = [
     advance: { kind: 'continue' },
   },
 
-  /* ─── Phase 10: Hand-off to Boxy. ─── */
+  /* ─── Phase 10: Hand-off to Boxy via the tutorial. ─── */
   {
     id: 'bridge-boxy',
     title: 'Boxy puzzles',
@@ -279,13 +279,18 @@ export const PHASES: readonly Phase[] = [
       { text: 'Now: boxy puzzles.', pauseAfterMs: 700 },
       {
         text:
-          'You will drag block shapes onto a grid. Two blocks that touch each other have to follow a count ratio — like 1:2 or 3:5. The rules panel tells you which ratios count.',
-        pauseAfterMs: 1500,
+          'Boxy adds a twist: each touching edge has a color, and the color tells you which ratio rule to apply.',
+        pauseAfterMs: 1300,
       },
-      { text: 'Try it. The site nav at the top lets you come back to the lesson anytime.' },
+      {
+        text:
+          'I will hand you off to a six-slide tutorial first. The tutorial ends with a Start Boxy button.',
+        pauseAfterMs: 1300,
+      },
+      { text: 'Tap below when you are ready.' },
     ],
     manipulative: { kind: 'info' },
-    advance: { kind: 'jump-out', route: '/boxy' },
+    advance: { kind: 'jump-out', route: '/tutorial' },
   },
 
   /* ─── Phase 11: Hand-off to Trade Mogging. ─── */

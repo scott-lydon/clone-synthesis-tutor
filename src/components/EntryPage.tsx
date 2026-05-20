@@ -50,10 +50,22 @@ export const EntryPage: React.FC = () => (
     </Link>
 
     {/* Jump-to cards (secondary) */}
-    <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-2xl">
+      <Link
+        to="/tutorial"
+        className="rounded-2xl px-5 py-4 text-center transition active:scale-95"
+        style={{
+          background: 'rgba(232, 168, 124, 0.10)',
+          boxShadow: 'inset 0 0 0 1px rgba(232, 168, 124, 0.30)',
+          color: '#e8c7b0',
+        }}
+      >
+        <div className="font-display text-lg tracking-wider">Tutorial</div>
+        <div className="text-xs opacity-70 mt-0.5">How Boxy works</div>
+      </Link>
       <Link
         to="/boxy"
-        className="flex-1 rounded-2xl px-5 py-4 text-center transition active:scale-95"
+        className="rounded-2xl px-5 py-4 text-center transition active:scale-95"
         style={{
           background: 'rgba(168, 198, 159, 0.10)',
           boxShadow: 'inset 0 0 0 1px rgba(168, 198, 159, 0.30)',
@@ -65,7 +77,7 @@ export const EntryPage: React.FC = () => (
       </Link>
       <Link
         to="/trade"
-        className="flex-1 rounded-2xl px-5 py-4 text-center transition active:scale-95"
+        className="rounded-2xl px-5 py-4 text-center transition active:scale-95"
         style={{
           background: 'rgba(184, 167, 201, 0.10)',
           boxShadow: 'inset 0 0 0 1px rgba(184, 167, 201, 0.30)',
