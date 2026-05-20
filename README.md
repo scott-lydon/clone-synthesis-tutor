@@ -71,4 +71,6 @@ Conventional Commits format (`feat:`, `fix:`, `docs:`, `chore:`). Separate commi
 
 ## Live demo
 
-[trade-mogging-v7ua.onrender.com](https://trade-mogging-v7ua.onrender.com) — Render Starter Node web service, Node 20, deploys from the `main` branch via a public-URL Blueprint (manual sync, no GitHub webhook). The Express server in `server/index.mjs` serves the Vite SPA from `dist/` and owns `/api/validate`. Smoke-tested end-to-end: `/healthz` confirms `anthropicKey: true`, `/api/validate` scores strong explanations 5 and gibberish 1.
+[trade-mogging.onrender.com](https://trade-mogging.onrender.com) — Render Starter Node web service, Node 20, service ID `srv-d85tgplckfvc73e63hkg`. Auto-deploys from `main` via [`.github/workflows/render-deploy.yml`](.github/workflows/render-deploy.yml), which POSTs to the Render Deploy Hook URL stored as repo secret `RENDER_DEPLOY_HOOK_URL`. The Express server in `server/index.mjs` serves the Vite SPA from `dist/` and owns `/api/validate`. Smoke-tested end-to-end: `/healthz` confirms `anthropicKey: true`, `/api/validate` scores strong explanations 5 and gibberish 1.
+
+This is the SOLE live URL for the project. Earlier iterations had a `trade-mogging-v7ua.onrender.com` orphan service and a standalone `boxy-fractions.onrender.com` (with its own copy of the Boxy game). Both have been retired; the canonical Boxy is at `/boxy` under this URL, kept in sync by the same auto-deploy.

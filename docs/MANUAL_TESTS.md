@@ -124,7 +124,7 @@ After serving all 6 customers, confirm the bazaar-closed screen appears with the
 ## Known issues to verify before declaring demo-ready
 
 - Bundle size warning at build time (676 KB). Cosmetic — well under what a fiber-fed iPad will load instantly.
-- AI validation requires `ANTHROPIC_API_KEY` set in Render dashboard → trade-mogging-v7ua → Environment. Without it, the local fallback runs but the kid's response calibration is coarser.
+- AI validation requires `ANTHROPIC_API_KEY` set in Render dashboard → `trade-mogging` (service ID `srv-d85tgplckfvc73e63hkg`) → Environment. Without it, the local fallback runs but the kid's response calibration is coarser.
 
 ## Issue reports — add new scenarios here as they're discovered
 
