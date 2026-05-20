@@ -26,6 +26,10 @@ interface StoreData {
   // Round generator removes void tiles; this caps fill at < 100% so the player
   // can see up-front what "perfect" looks like for this puzzle.
   maxPossiblePercent: number;
+  // Misses this round: count of placement attempts that were rejected. Used
+  // to discourage brute-force drag-and-pray after the first piece lands —
+  // see Toolbar's "misses" chip. Resets on New round and Reset.
+  missCount: number;
 }
 
 interface StoreActions {
@@ -115,6 +119,7 @@ const initialData = (): StoreData => {
     submitted: false,
     score: 0,
     maxPossiblePercent: maxPossiblePercentFor(round),
+    missCount: 0,
   };
 };
 
@@ -145,7 +150,12 @@ export const useGameStore = create<GameStore>((set) => ({
       // drop was on a valid empty cell.
       const snap = findBestOrigin(piece, { col: gridCol, row: gridRow }, s.grid, s.round.rules);
       if (!snap.ok) {
-        return appendMessage(s, "warn", softReason(snap.reason));
+        // Each rejection bumps the round's miss counter. The Toolbar's
+        // "misses" chip surfaces this, which is a soft pressure against
+        // brute-force drag-and-pray after the first piece lands. Resets
+        // on New round and Reset; never decrements.
+        const bumped = { ...s, missCount: s.missCount + 1 };
+        return appendMessage(bumped, "warn", softReason(snap.reason));
       }
       const placementId = `placement-${s.placementCounter + 1}`;
       const placement: Placement = {
@@ -211,6 +221,7 @@ export const useGameStore = create<GameStore>((set) => ({
         submitted: false,
         score: 0,
         maxPossiblePercent: maxPossiblePercentFor(round),
+        missCount: 0,
       };
     });
   },
@@ -277,6 +288,10 @@ export const useGameStore = create<GameStore>((set) => ({
         submitted: false,
         revealedSolution: false,
         score: 0,
+        // Reset means "I want a fresh attempt on the same puzzle." The miss
+        // counter is a per-attempt stat, so it resets too — otherwise misses
+        // from the first attempt would punish a clean second attempt.
+        missCount: 0,
       };
     });
   },
@@ -376,13 +391,17 @@ function findBestOrigin(
   }
   if (bestOk) return { ok: true, origin: bestOk.origin };
 
-  // Rank rejection reasons so we surface the most-useful one. rule_mismatch is
-  // about the math (the actual puzzle), so it outranks geometric reasons.
+  // Rank rejection reasons so we surface the most-useful one. rule_mismatch
+  // and color_mismatch both come from the actual edge contract — surface
+  // those before geometric reasons. Inside that band, rule_mismatch wins
+  // (it tells the player exactly which ratio was tried), with color_mismatch
+  // as the next-most-useful (tells them WHY no ratio applies).
   const priority: Record<CanPlaceFail["reason"], number> = {
     rule_mismatch: 0,
-    overlap: 1,
-    no_adjacency: 2,
-    out_of_bounds: 3,
+    color_mismatch: 1,
+    overlap: 2,
+    no_adjacency: 3,
+    out_of_bounds: 4,
   };
   fails.sort((a, b) => priority[a.reason] - priority[b.reason]);
   return { ok: false, reason: fails[0] };
@@ -396,7 +415,12 @@ function findBestOrigin(
 function softReason(r: CanPlaceFail): string {
   switch (r.reason) {
     case "rule_mismatch":
-      return `I think it might land another way — those two pieces would meet in a ${r.placedCount}:${r.newCount} ratio, and no rule in the panel allows that. Try a different piece, or a spot next to a different piece.`;
+      return `I think it might land another way — the ${r.color} rule says ${r.placedCount}:${r.newCount} doesn't fit. Try a piece whose count matches the ${r.color} ratio, or rotate the touch so a different color meets the edge.`;
+    case "color_mismatch": {
+      const n = r.newColor ?? 'blank';
+      const x = r.neighborColor ?? 'blank';
+      return `I think it might land another way — at the edge you tried, your piece shows ${n} and the placed piece shows ${x}. Touching edges must match colors, and a colored side cannot meet a blank one.`;
+    }
     case "overlap":
       return "I think it might fit another way — every box of the piece has to land on an empty cell, and at least one of these would overlap. Try a spot a cell over.";
     case "no_adjacency":

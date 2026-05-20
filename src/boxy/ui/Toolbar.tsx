@@ -20,6 +20,7 @@ export function Toolbar() {
   const revealed = useGameStore((s) => s.revealedSolution);
   const grid = useGameStore((s) => s.grid);
   const max = useGameStore((s) => s.maxPossiblePercent);
+  const misses = useGameStore((s) => s.missCount);
   const placementsLen = grid.placements.length;
   const anchorOnly = grid.placements.every((p) => p.anchor);
   const total = grid.cols * grid.rows;
@@ -79,16 +80,28 @@ export function Toolbar() {
       >
         Reveal answer
       </button>
-      <FillReadout current={current} max={max} />
+      <FillReadout current={current} max={max} misses={misses} />
     </div>
   );
 }
 
 /**
- * Two stacked rows: live "filled" and the ceiling "possible". Both update on
- * every placement (current) / on every new round (max).
+ * Three columns inside one chip: live "filled" %, ceiling "possible" %, and
+ * "misses" — the number of placement rejections this round. Misses lights up
+ * after the first rejection so it stays inert (gray, 0) when the player is
+ * thinking clearly, and tints honey once they start collecting rejections.
+ * The chip is a soft pressure against drag-and-pray, not a punishment;
+ * resetting (Reset / New round) clears it back to 0.
  */
-function FillReadout({ current, max }: { current: number; max: number }) {
+function FillReadout({
+  current,
+  max,
+  misses,
+}: {
+  current: number;
+  max: number;
+  misses: number;
+}) {
   return (
     <div
       className="px-4 py-2 rounded-2xl flex items-center gap-3 tabular-nums"
@@ -108,6 +121,18 @@ function FillReadout({ current, max }: { current: number; max: number }) {
         <span className="text-[10px] uppercase tracking-wider text-slate-500">possible</span>
         <span className="text-lg font-semibold" style={{ color: "rgba(212, 200, 178, 0.7)" }}>
           {max}%
+        </span>
+      </div>
+      <div className="w-px h-8" style={{ background: "rgba(212, 200, 178, 0.15)" }} />
+      <div className="flex flex-col leading-tight" title="placements rejected this attempt">
+        <span className="text-[10px] uppercase tracking-wider text-slate-500">misses</span>
+        <span
+          className="text-lg font-semibold"
+          style={{
+            color: misses === 0 ? 'rgba(212, 200, 178, 0.45)' : '#e6c879',
+          }}
+        >
+          {misses}
         </span>
       </div>
     </div>

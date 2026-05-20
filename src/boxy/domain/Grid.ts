@@ -68,13 +68,20 @@ export class Grid {
     | { ok: true }
     | { ok: false; reason: "out_of_bounds" }
     | { ok: false; reason: "overlap"; col: number; row: number }
+    | { ok: false; reason: "no_adjacency" }
     | {
         ok: false;
-        reason: "no_adjacency";
+        reason: "color_mismatch";
+        col: number;
+        row: number;
+        side: Side;
+        newColor: string | null;
+        neighborColor: string | null;
       }
     | {
         ok: false;
         reason: "rule_mismatch";
+        color: string;
         placedCount: number;
         newCount: number;
       } {
@@ -90,17 +97,26 @@ export class Grid {
       }
     }
 
-    // 2. For each adjacent neighbor (regardless of side color), the two pieces'
-    //    square counts must satisfy at least one rule's ratio. Colors on the
-    //    sides are descriptive hints, not constraints — that frees the student
-    //    from spinning pieces until colors line up, and forces them to reason
-    //    about the actual count ratio.
+    // 2. Per-edge color contract. For every cell-edge between the new piece
+    //    and an adjacent placed piece:
+    //      - both sides white (uncolored) → no rule applies, edge OK
+    //      - one side colored, other side white → REJECT (color_mismatch with
+    //        null on the white side). A colored edge cannot meet a blank wall.
+    //      - both sides colored, different colors → REJECT.
+    //      - both sides colored, same color → the rule for that color must
+    //        be satisfied by the (newCount, placedCount) pair in either
+    //        ordering (so 3:5 is the same as 5:3, and equivalents like 6:10
+    //        also satisfy 3:5).
     //
-    //    Adjacency is computed once per (this-piece, neighbor-piece) pair so we
-    //    don't fail a placement just because not every shared edge happens to
-    //    match a rule independently. If the ratio works, the placement works.
+    //    Rationale: an earlier revision dropped color matching ("any rule
+    //    that fits the count ratio works") to make placement easier. That
+    //    let the player drop pieces wherever the math happened to land,
+    //    even when the actual colors at the edge said something different.
+    //    Field feedback confirmed bug: 4-piece accepted next to 6-piece on
+    //    a 1:3-colored edge because 4:6 reduces to 2:3 (which IS a rule,
+    //    just not THIS edge's rule). Restoring per-edge color match makes
+    //    the math the actual gate.
     let touchedSomething = false;
-    const neighborsSeen = new Set<string>();
     for (const cell of piece.polyomino.cells) {
       const absCol = origin.col + cell.col;
       const absRow = origin.row + cell.row;
@@ -110,19 +126,61 @@ export class Grid {
         const neighbor = this.cellOccupier(absCol + dcol, absRow + drow);
         if (!neighbor) continue;
         touchedSomething = true;
-        if (neighborsSeen.has(neighbor.placementId)) continue;
-        neighborsSeen.add(neighbor.placementId);
+
+        const newColor = piece.colorOn(cell.col, cell.row, side);
+        // Find the neighbor cell that faces this edge and ask for ITS color
+        // on the OPPOSITE side.
+        const nbrLocalCol = absCol + dcol - neighbor.origin.col;
+        const nbrLocalRow = absRow + drow - neighbor.origin.row;
+        const opposite: Side =
+          side === "N" ? "S" : side === "S" ? "N" : side === "E" ? "W" : "E";
+        const neighborColor = neighbor.piece.colorOn(nbrLocalCol, nbrLocalRow, opposite);
+
+        // Both blank: skip — no rule applies on this edge.
+        if (!newColor && !neighborColor) continue;
+        // Exactly one blank: invalid.
+        if (!newColor || !neighborColor) {
+          return {
+            ok: false,
+            reason: "color_mismatch",
+            col: absCol,
+            row: absRow,
+            side,
+            newColor,
+            neighborColor,
+          };
+        }
+        // Both colored but different colors: invalid.
+        if (newColor !== neighborColor) {
+          return {
+            ok: false,
+            reason: "color_mismatch",
+            col: absCol,
+            row: absRow,
+            side,
+            newColor,
+            neighborColor,
+          };
+        }
+        // Same color: that color's rule must be satisfied by the box counts.
+        const rule = rules.find((r) => r.color === newColor);
+        if (!rule) {
+          throw new Error(
+            `Edge at (${absCol},${absRow}) carries color "${newColor}" but no Rule for that color exists in the round's rule set. ` +
+              `Bug: the generator painted a side with a color it did not register as a rule. ` +
+              `Check the rule-derivation pass in src/boxy/domain/Generator.ts.`,
+          );
+        }
         const placedCount = neighbor.piece.squareCount;
         const newCount = piece.squareCount;
-        const ratioOk = rules.some(
-          (r) =>
-            ruleSatisfied(r, placedCount, newCount) ||
-            ruleSatisfied(r, newCount, placedCount),
-        );
-        if (!ratioOk) {
+        const ruleOk =
+          ruleSatisfied(rule, placedCount, newCount) ||
+          ruleSatisfied(rule, newCount, placedCount);
+        if (!ruleOk) {
           return {
             ok: false,
             reason: "rule_mismatch",
+            color: newColor,
             placedCount,
             newCount,
           };
