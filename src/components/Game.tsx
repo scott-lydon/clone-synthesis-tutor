@@ -144,14 +144,26 @@ export const Game: React.FC = () => {
           />
         </div>
 
-        {/* Vendor stalls */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-            {ALL_VENDORS.map((vendor) => (
+        {/* Vendor stalls. ONE at a time — only the stall whose food matches
+            the current customer's order is shown. The earlier 5-column row
+            of every vendor (active + four dimmed) was visual clutter that
+            forced the kid to scan five panels of animal art just to find
+            the one stall they can actually drag from. The "tap a dim piece
+            to see 'this is hummus, the customer wants pita'" discovery
+            loop is rarely used in practice, and when it is, the customer
+            card already says the food name explicitly. Single-stall keeps
+            the kid focused on the math (which pieces add up to the target
+            fraction?) rather than on stall identification.
+            If a future round needs the discovery loop back, the right path
+            is a per-round flag on the customer ("hide-food: true") rather
+            than reverting the global layout. */}
+        <div className="flex-1 overflow-y-auto flex justify-center">
+          <div className="w-full max-w-sm">
+            {ALL_VENDORS.filter((v) => v.food === customer.food).map((vendor) => (
               <VendorStall
                 key={vendor.id}
                 vendor={vendor}
-                isActive={vendor.food === customer.food}
+                isActive={true}
                 moggedState={moggedState(vendor.id)}
               />
             ))}
